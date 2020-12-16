@@ -1,4 +1,9 @@
 ### Hi there 👋
+### GitHub Stats:
+
+<div markdown="1">
+<img align="center" alt="stats" src="https://github-readme-stats.scueroinc.vercel.app/api?username=scueroinc&count_private=true&include_all_commits=true&theme=tokyonight" />  
+</div>  
 
 <!--
 **ScueroInc/ScueroInc** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
