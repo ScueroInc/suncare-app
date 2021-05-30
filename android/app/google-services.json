@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "98906439350",
+    "project_id": "suncareapp",
+    "storage_bucket": "suncareapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98906439350:android:27405401b48629a5597017",
+        "android_client_info": {
+          "package_name": "com.example.suncare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "98906439350-kna63q96arjcvg6gekpnpa8qeci6vvmt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXInsiFFaTQufzvMP4nx6GKK4z_G-Bw5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "98906439350-kna63q96arjcvg6gekpnpa8qeci6vvmt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

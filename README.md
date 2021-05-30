@@ -1,21 +1,16 @@
-### Hi there 👋
-### GitHub Stats:
+# suncare
 
-<div markdown="1">
-<img align="center" alt="stats" src="https://github-readme-stats.scueroinc.vercel.app/api?username=scueroinc&include_all_commits=true&theme=tokyonight" />  
-</div>  
+A new Flutter project.
 
-<!--
-**ScueroInc/ScueroInc** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+## Getting Started
 
-Here are some ideas to get you started:
+This project is a starting point for a Flutter application.
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+
+For help getting started with Flutter, view our
+[online documentation](https://flutter.dev/docs), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
