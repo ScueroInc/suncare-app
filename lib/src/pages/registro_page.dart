@@ -9,7 +9,7 @@ class RegistroPage extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+        backgroundColor: Color.fromRGBO(255, 216, 137, 6),
         body: _selectTypeUser(context, size));
   }
 
@@ -18,15 +18,21 @@ class RegistroPage extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            height: size.height * 0.35,
-            child: SvgPicture.asset('assets/img/logo_registro.svg'),
+            height: size.height * 0.45,
+            //child: SvgPicture.asset('assets/img/FondoRegistro.png'),
+            decoration: BoxDecoration(
+                        image: DecorationImage(
+                            image: AssetImage('assets/img/FondoRegistro.png'),
+                            fit: BoxFit.fill)),
           ),
-          SizedBox(height: 50),
+          SizedBox(height: 10),
           Text(
             'TIPO DE USUARIO',
-            style: TextStyle(color: Colors.white, fontSize: 28.0),
+            style: TextStyle(color: Colors.white,
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 120),
+          SizedBox(height: 70),
           _buttonUsuario(context),
           SizedBox(
             height: 50,
@@ -49,7 +55,7 @@ class RegistroPage extends StatelessWidget {
         child: RaisedButton(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
-          color: Color.fromRGBO(143, 148, 251, 1),
+          color: Color.fromRGBO(255, 191, 57, 1),
           textColor: Colors.white,
           child: Text('Usuario', style: TextStyle(fontSize: 18.0)),
           onPressed: () {
@@ -69,7 +75,7 @@ class RegistroPage extends StatelessWidget {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
           color: Colors.white,
-          textColor: Color.fromRGBO(143, 148, 251, 1),
+          textColor: Color.fromRGBO(255, 191, 57, 1),
           child: Text('Dermatólogo', style: TextStyle(fontSize: 18.0)),
           onPressed: () {
             _goRegistro(context, 2);
