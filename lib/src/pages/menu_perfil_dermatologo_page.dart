@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:suncare/src/bloc/dermatologo_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuPerfilDermatologo extends StatefulWidget {
   @override
@@ -22,17 +25,33 @@ class _MenuPerfilDermatologoState extends State<MenuPerfilDermatologo> {
 
   DermatologoModel dermatologo = new DermatologoModel();
   DermatologoBloc dermatologoBloc;
+
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
+  bool _source = true;
+  @override
+  void initState() {
+    super.initState();
+    _connectivityProvider.initialize();
+    _connectivityProvider.connectivityStream.listen((source) {
+      if (mounted) {
+        setState(() {
+          _source = source;
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final idUser = _preferencia.userIdDB;
 
     dermatologoBloc = Provider.of_DermatologoBloc(context);
     dermatologoBloc.buscarDermatologo(idUser);
-
+    // return Text('ss');
     return Scaffold(
         key: scaffoldKey,
         appBar: AppBar(
-          backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+          backgroundColor: Colors.amber,
           centerTitle: true,
           title: Text('Perfil dermatólogo'),
           leading: IconButton(
@@ -53,44 +72,62 @@ class _MenuPerfilDermatologoState extends State<MenuPerfilDermatologo> {
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () {
+                _connectivityProvider.setShowError(null);
                 Navigator.pushNamed(context, 'modificarPerfilDermatologo');
               },
             )
           ],
         ),
         body: SingleChildScrollView(
-          child: Container(
-            padding: EdgeInsets.only(left: 16, top: 25, right: 16),
-            child: StreamBuilder(
-              stream: dermatologoBloc.dermatologoBuscadoStream,
-              builder: (BuildContext context,
-                  AsyncSnapshot<DermatologoModel> snapshot) {
-                print('-------0 ${snapshot.data}');
-                if (snapshot.hasData) {
-                  // PacienteModel paciente = snapshot.data;
-                  dermatologo = snapshot.data;
+          child: Stack(
+            children: [
+              Container(
+                padding: EdgeInsets.only(left: 16, top: 25, right: 16),
+                child: StreamBuilder(
+                  stream: dermatologoBloc.dermatologoBuscadoStream,
+                  builder: (BuildContext context,
+                      AsyncSnapshot<DermatologoModel> snapshot) {
+                    print('-------0 ${snapshot.data}');
+                    if (snapshot.hasData) {
+                      // PacienteModel paciente = snapshot.data;
+                      dermatologo = snapshot.data;
 
-                  return Form(
-                    key: formKey,
-                    child: Column(
-                      children: <Widget>[
-                        _mostrarFoto(),
-                        _mostrarNombre(),
-                        _mostrarApellido(),
-                        _mostrarCorreo(),
-                        _mostrarCmp(),
-                        // _mostrarNacimiento(),
-                        // _mostrarNacimiento(),
-                        SizedBox(height: 20),
-                        // _mostrarAcciones()
-                      ],
-                    ),
-                  );
-                } else {
-                  return Center(child: CircularProgressIndicator());
-                }
-              },
-            ),
+                      return Form(
+                        key: formKey,
+                        child: Column(
+                          children: <Widget>[
+                            _mostrarFoto(),
+                            _mostrarNombre(),
+                            _mostrarApellido(),
+                            _mostrarCorreo(),
+                            _mostrarCmp(),
+                            // _mostrarNacimiento(),
+                            // _mostrarNacimiento(),
+                            SizedBox(height: 20),
+                            // _mostrarAcciones()
+                          ],
+                        ),
+                      );
+                    } else {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
+              ),
+              utils.mostrarInternetConexion(_source)
+              /* 
+              StreamBuilder(
+                stream: _connectivityProvider.connectivityStream ,
+                initialData: true,
+                builder: (BuildContext context, AsyncSnapshot snapshot){
+                  var isConnected = snapshot.data;
+                  if(isConnected != null){
+                    _connectivityProvider.setShowError(isConnected);
+                  }
+                  return utils.mostrarInternetConexionWithStream(_connectivityProvider);
+                },
+              ), */
+            ],
           ),
         ));
   }
@@ -160,7 +197,7 @@ class _MenuPerfilDermatologoState extends State<MenuPerfilDermatologo> {
     return TextFormField(
       initialValue: dermatologo.apellido,
       enabled: false,
-      decoration: InputDecoration(labelText: 'Apellido'),
+      decoration: InputDecoration(labelText: 'Apellidos'),
       onSaved: (value) => dermatologo.apellido = value,
     );
   }
@@ -209,7 +246,7 @@ class _MenuPerfilDermatologoState extends State<MenuPerfilDermatologo> {
               style: TextStyle(color: Colors.white),
             ),
           ),
-          color: Color.fromRGBO(143, 148, 251, 1),
+          color: Colors.amber,
           elevation: 2,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -23,7 +23,7 @@ class DataCoreBloc {
   final _dataCoreProvider = DataCoreProvider();
 
   DataCoreBloc() {
-    insertarDataPrincipal();
+    // insertarDataPrincipal();
   }
 
   // Recuperar Data

@@ -1,30 +1,62 @@
+import 'dart:async';
+
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/services/text_formatter.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/bloc/validarCmp_bloc.dart';
 import 'package:suncare/src/bloc/vinculacion_bloc.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuVinculacion extends StatelessWidget {
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  ConnectivityBloc _connectivityBloc;
   VinculacionBloc _vinculacionBloc;
+  ConnectivityProvider _connectivityProvider;
   String idMedicoVincular = "";
   Size size;
   @override
   Widget build(BuildContext context) {
     _vinculacionBloc = Provider.of_VinculacionBloc(context);
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     _vinculacionBloc.estadoActual();
+    _connectivityProvider = ConnectivityProvider.instance;
     size = MediaQuery.of(context).size;
+
+    bool ultimoEstado = _connectivityBloc.conectividad;
+    print('-internet- ${_connectivityBloc.conectividad}');
+
     return Scaffold(
-      key: scaffoldKey,
-      appBar: AppBar(
-        title: Text('Vinculación'),
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
-      ),
-      body: contenido(),
-      // floatingActionButton: botonFlotante(context),
-    );
+        key: scaffoldKey,
+        appBar: AppBar(
+          title: Text('Estado de vinculación'),
+          backgroundColor: Colors.amber,
+        ),
+        //body: contenido(),
+        body: StreamBuilder(
+          stream: _connectivityBloc.connectivityStream,
+          builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+            var status = snapshot.data;
+            if (ultimoEstado == false && status == false) {
+              return utils.nostrarInternetError();
+            } else {
+              return Stack(
+                children: [
+                  contenido(),
+                  // utils.mostrarInternetConexionWithStream(_connectivityProvider)
+                  utils.nostrarInternetErrorStream(_connectivityBloc)
+                ],
+              );
+            }
+          },
+        )
+
+        // floatingActionButton: botonFlotante(context),
+        );
   }
 
   Widget contenido() {
@@ -71,11 +103,72 @@ class MenuVinculacion extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       TextButton(
+                          child: Text('Cancelar',
+                              style: TextStyle(color: Colors.amber[800])),
+                          onPressed: () => {
+                                bloc.changeCmp(''),
+                                Navigator.pushNamed(context, 'home')
+                              }),
+                      StreamBuilder(
+                        //dashhhhhhh
+                        // stream: _connectivityProvider.connectivityStream ,
+                        stream: _connectivityBloc.connectivityStream,
+                        initialData: true,
+                        builder:
+                            (BuildContext context, AsyncSnapshot snapshot) {
+                          var isConnected = snapshot.data;
+                          print('raaass ${isConnected}');
+                          if (isConnected != null) {
+                            if (isConnected == true) {
+                              _connectivityProvider.setShowError(true);
+                            }
+                          }
+                          return Container(
+                              child: TextButton(
+                                  child: Text('Aceptar',
+                                      style:
+                                          TextStyle(color: Colors.amber[800])),
+                                  onPressed: () async {
+                                    if (isConnected != null) {
+                                      if (isConnected == true) {
+                                        bool res = await _vinculacionBloc
+                                            .crearVinculacion(idMedicoVincular);
+
+                                        if (res == true) {
+                                          // Navigator.of(context).pop();
+                                          mostrarSnackBar(
+                                              Icons.thumb_up,
+                                              'Dermatólogo vinculado con éxito',
+                                              Colors.amber);
+                                          await _vinculacionBloc.estadoActual();
+                                          Timer(Duration(seconds: 2), () {
+                                            Navigator.pushReplacementNamed(
+                                                context, 'vinculacion');
+                                          });
+                                        } else {
+                                          // Navigator.of(context).pop();
+                                          mostrarSnackBar(Icons.error,
+                                              'Ocurrio un error', Colors.red);
+                                        }
+                                      } else {
+                                        _connectivityProvider
+                                            .setShowError(false);
+                                      }
+                                    }
+                                  }));
+                        },
+                      ),
+                      /* TextButton(
                       child: Text('Cancelar',
                               style: TextStyle(
-                                  color: Color.fromRGBO(143, 148, 251, 6))),
-                      onPressed: () => Navigator.pushNamed(context, 'home')),
-                      TextButton(
+                                  color: Color.fromRGBO(143, 148, 251, 6))
+                                  ),
+                      onPressed: () => {
+                        bloc.changeCmp(''),
+                        Navigator.pushNamed(context, 'home')                        
+                        }
+                        ), */
+                      /* TextButton(
                           child: Text('Aceptar',
                               style: TextStyle(
                                   color: Color.fromRGBO(143, 148, 251, 6))),
@@ -85,7 +178,7 @@ class MenuVinculacion extends StatelessWidget {
 
                             if (res == true) {
                               // Navigator.of(context).pop();
-                              Navigator.pushNamed(context, 'vinculacion');
+                              Navigator.pushReplacementNamed(context, 'vinculacion');
                               mostrarSnackBar(Icons.thumb_up,
                                   'Paciente vinculado con éxito', Colors.blue);
                               await _vinculacionBloc.estadoActual();
@@ -94,7 +187,7 @@ class MenuVinculacion extends StatelessWidget {
                               mostrarSnackBar(
                                   Icons.error, 'Ocurrio un error', Colors.red);
                             }
-                          }),
+                          }), */
                     ],
                   ),
                 ],
@@ -165,7 +258,7 @@ class MenuVinculacion extends StatelessWidget {
                       dermatologo.apellido,
                       style: TextStyle(fontSize: 25),
                     ),
-                    subtitle: Text('Apellido'),
+                    subtitle: Text('Apellidos'),
                   ),
                   ListTile(
                     title: Text(
@@ -244,10 +337,8 @@ class MenuVinculacion extends StatelessWidget {
                       //se cancelo correctamente
                       print('se canceló correctamente');
                       Navigator.of(context).pop();
-                      mostrarSnackBar(
-                          Icons.thumb_up,
-                          'Se canceló correctamente',
-                          Color.fromRGBO(143, 148, 251, 6));
+                      mostrarSnackBar(Icons.thumb_up,
+                          'Se canceló correctamente', Colors.amber);
                       _vinculacionBloc.estadoActual();
                     } else {
                       //hubo un error
@@ -266,51 +357,58 @@ class MenuVinculacion extends StatelessWidget {
     return SizedBox(
       width: 280,
       height: 45,
-      child: RaisedButton(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
-          child: Text(
-            'Desvincular',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        color: Color.fromRGBO(245, 90, 90, 1),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        onPressed: () async {
-          // Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
-          bool respuesta = await _vinculacionBloc.cancelarVinculacion();
-          if (respuesta) {
-            //se cancelo correctamente
-            print('Dermatólogo desvinculado con éxito');
-            // Navigator.of(context).pop();
-            mostrarSnackBar(Icons.thumb_up, 'Dermatólogo desvinculado con éxito',
-                Color.fromRGBO(143, 148, 251, 6));
-            Navigator.pushNamed(context, 'home');
-            _vinculacionBloc.estadoActual();
-          } else {
-            //hubo un error
-            print('hubo un error');
-            Navigator.of(context).pop();
-            mostrarSnackBar(Icons.error, 'Ocurrio un error', Colors.red);
-          }
-        },
-      ),
-      // child: RaisedButton(
-      //   child: Container(
-      //       padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
-
-      //     child: Text('Cancelar', style: TextStyle(fontSize: 18.0)),
-      //   ),
-      //   shape:
-      //       RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
-      //   elevation: 0.0,
-      //   color: Color.fromRGBO(245, 90, 90, 1),
-      //   textColor: Colors.white,
-      //   onPressed: () {
-      //     Navigator.pushReplacementNamed(context, 'login');
-      //   },
-      // ),
+      child: StreamBuilder(
+          stream: _connectivityProvider.connectivityStream,
+          initialData: true,
+          builder: (context, snapshot) {
+            var isConnected = snapshot.data;
+            if (isConnected != null) {
+              if (isConnected == true) {
+                _connectivityProvider.setShowError(true);
+              }
+            }
+            return RaisedButton(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
+                child: Text(
+                  'Desvincular',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              color: Color.fromRGBO(245, 90, 90, 1),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              onPressed: () async {
+                if (isConnected != null) {
+                  if (isConnected == true) {
+                    // Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
+                    bool respuesta =
+                        await _vinculacionBloc.cancelarVinculacion();
+                    if (respuesta) {
+                      //se cancelo correctamente
+                      print('Dermatólogo desvincunlado con éxito');
+                      // Navigator.of(context).pop();
+                      mostrarSnackBar(Icons.thumb_up,
+                          'Dermatólogo desvincunlado con éxito', Colors.amber);
+                      _vinculacionBloc.estadoActual();
+                      Timer(Duration(seconds: 2), () {
+                        Navigator.pushNamed(context, 'home');
+                      });
+                    } else {
+                      //hubo un error
+                      print('hubo un error');
+                      Navigator.of(context).pop();
+                      mostrarSnackBar(
+                          Icons.error, 'Ocurrio un error', Colors.red);
+                    }
+                  } else {
+                    _connectivityProvider.setShowError(false);
+                  }
+                }
+              },
+            );
+          }),
     );
   }
 
@@ -356,7 +454,7 @@ class MenuVinculacion extends StatelessWidget {
                   if (res == true) {
                     Navigator.of(context).pop();
                     mostrarSnackBar(
-                        Icons.thumb_up, 'Vinculación correcta', Colors.blue);
+                        Icons.thumb_up, 'Vinculación correcta', Colors.amber);
                     await _vinculacionBloc.estadoActual();
                   } else {
                     Navigator.of(context).pop();

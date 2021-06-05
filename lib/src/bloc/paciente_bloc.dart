@@ -18,6 +18,8 @@ class PacienteBloc with Validators {
   final _passwordController = BehaviorSubject<String>();
   final _nameController = BehaviorSubject<String>();
   final _lastNameController = BehaviorSubject<String>();
+  final _tipoPielController = BehaviorSubject<String>();
+  final _imagenPerfilController = BehaviorSubject<File>();
 
   Stream<String> get emailStream => _emailController.transform(validarEmail);
   Stream<String> get passwordStream =>
@@ -25,9 +27,10 @@ class PacienteBloc with Validators {
   Stream<String> get nameStream => _nameController.transform(validarName);
   Stream<String> get lastNameStream =>
       _lastNameController.transform(validarLastname);
-
-  Stream<bool> get formValidStream => CombineLatestStream.combine3(
-      emailStream, nameStream, lastNameStream, (e, n, l) => true);
+  Stream<File> get imagenPerfilStream => _imagenPerfilController.stream;
+  Stream<String> get tipoPielStream => _tipoPielController.stream;
+  Stream<bool> get formValidStream => CombineLatestStream.combine4(
+      emailStream, nameStream, lastNameStream,tipoPielStream, (e, n, l,t) => true);
 
   // Escuchar los datos del Stream
   Stream<List<PacienteModel>> get pacienteStream => _pacientesController.stream;
@@ -39,6 +42,8 @@ class PacienteBloc with Validators {
   Function(String) get changePassword => _passwordController.sink.add;
   Function(String) get changeName => _nameController.sink.add;
   Function(String) get changeLastName => _lastNameController.sink.add;
+  Function(String) get changeTipoPiel => _tipoPielController.sink.add;
+  Function(File) get changeImagenPerfil => _imagenPerfilController.sink.add;
   //Insertar Data
   void crearPaciente(PacienteModel paciente) async {
     _cargandoController.sink.add(true);
@@ -92,5 +97,7 @@ class PacienteBloc with Validators {
     _passwordController?.close();
     _nameController?.close();
     _lastNameController?.close();
+    _tipoPielController?.close();
+    _imagenPerfilController?.close();
   }
 }

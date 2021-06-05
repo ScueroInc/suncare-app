@@ -1,20 +1,21 @@
+import 'dart:async';
 import 'dart:io';
-
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 // import 'package:suncare/src/providers/dermatologo_provider.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/bloc/registrarDermatologo_bloc.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/models/solicitud_validacion_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/providers/usuario_provider.dart';
 import 'package:suncare/src/utils/utils.dart' as utils;
 import 'package:intl/intl.dart';
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
 import '../widgets/my_snack_bar.dart';
 
 class RegistroDermatologoPage extends StatefulWidget {
@@ -25,39 +26,40 @@ class RegistroDermatologoPage extends StatefulWidget {
 
 class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
   final formKey = GlobalKey<FormState>();
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  
   File fotoProfile;
   File fotoDni;
-
   final UsuarioProvider usuarioProvider = new UsuarioProvider();
-
   DermatologoBloc dermatologoBloc;
-
+  ConnectivityBloc _connectivityBloc;
   DermatologoModel dermatologo = new DermatologoModel();
   SolicitudValidacionModel solicitudValidacion = new SolicitudValidacionModel();
   RegistrarDermatologoBloc bloc;
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
 
   @override
   Widget build(BuildContext context) {
     dermatologoBloc = Provider.of_DermatologoBloc(context);
     bloc = Provider.of_RegistrarDermatologoBloc(context);
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
 
     return SafeArea(
-      child: Scaffold(
-        key: scaffoldKey,
-        //resizeToAvoidBottomInset: false,
-        body: SingleChildScrollView(
-          child: Container(
-            padding: EdgeInsets.all(15.0),
-            child: _formularioUsuario(context, bloc),
-          ),
+        child: Scaffold(
+      key: scaffoldKey,
+      body: SingleChildScrollView(
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.all(15.0),
+              child: _formularioUsuario(context, bloc),
+            ),
+            utils.mostrarInternetConexionWithStream(_connectivityProvider)
+          ],
         ),
-        appBar: AppBar(
-          backgroundColor: Color.fromRGBO(143, 148, 251, 6),
-          title: Center(child: Text('Crear cuenta'))
-        ),
+      ),
+      appBar: AppBar(
+          backgroundColor: Colors.amber,
+          title: Center(child: Text('Crear cuenta'))),
     ));
   }
 
@@ -97,16 +99,13 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
 
   _procesarImagen(ImageSource origen, RegistrarDermatologoBloc bloc) async {
     final _picker = ImagePicker();
-
     final pickedFile = await _picker.getImage(
-        source: origen); //pickImage(source: ImageSource.gallery);
-
+        source: origen);
     if (pickedFile != null) {
       fotoProfile = File(pickedFile.path);
       bloc.changeImagenPerfil(fotoProfile);
       dermatologo.imagenProfile = null;
     }
-
     setState(() {});
   }
 
@@ -116,31 +115,21 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
 
   _procesarImagenDNI(ImageSource origen, RegistrarDermatologoBloc bloc) async {
     final _picker = ImagePicker();
-
-    final pickedFile = await _picker.getImage(
-        source: origen);
-
+    final pickedFile = await _picker.getImage(source: origen);
     if (pickedFile != null) {
       fotoDni = File(pickedFile.path);
       bloc.changeImagenDni(fotoDni);
       dermatologo.imagenDni = null;
     }
-
     setState(() {});
   }
 
   Widget _formularioUsuario(BuildContext context, bloc) {
-    //final bloc = Provider.of_RegistrarDermatologoBloc(context);
     return Form(
         key: formKey,
         child: Container(
-          
           child: Column(
             children: [
-              // SizedBox(height: 30),
-              // _titlePage(),
-              //SizedBox(height: 10),
-              //_mostrarFoto(),
               _crearNombre(bloc),
               SizedBox(height: 10),
               _crearApellido(bloc),
@@ -151,8 +140,6 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
               SizedBox(height: 10),
               _crearPassword(bloc),
               SizedBox(height: 10),
-              // Divider(),
-              // _crearPasswordConfirmacion(),
               _crearimagenCarnet(bloc),
               SizedBox(height: 10),
               _crearimagenDni(bloc),
@@ -167,37 +154,38 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
 
   Widget _titlePage() {
     return Center(
-      child: Text('Crear Cuenta',
-          style: TextStyle(
-              fontSize: 28.0, color: Color.fromRGBO(143, 148, 251, 1))),
+      child: Text('Crear cuenta',
+          style: TextStyle(fontSize: 28.0, color: Colors.amber)),
     );
   }
 
   Widget _crearNombre(RegistrarDermatologoBloc bloc) {
     return StreamBuilder(
       stream: bloc.nameStream,
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        return TextFormField(
-          initialValue: dermatologo.nombre,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(20.0)),
-            icon: Icon(Icons.person),
-            labelText: 'Ingrese su nombre',
-            errorText: snapshot.error,
-          ),
-          onSaved: (value) => dermatologo.nombre = value,
-          validator: (value) {
-            if (value.length < 3) {
-              return 'Ingrese un nombre válido';
-            } else {
-              return null;
-            }
+      builder:
+          (BuildContext context, AsyncSnapshot snapshot) {
+            return TextFormField(
+              maxLength: 30,
+              buildCounter:
+                  (BuildContext context, {int currentLength, int maxLength, bool isFocused}) => null,
+                  initialValue: dermatologo.nombre,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(border:OutlineInputBorder(borderRadius: BorderRadius.circular(20.0)),
+                    icon: Icon(Icons.person),
+                    labelText: 'Ingrese su nombre',
+                    errorText: snapshot.error,
+                  ),
+                  onSaved: (value) => dermatologo.nombre = value,
+                  validator: (value) {
+                    if (value.length < 3) {
+                      return 'Ingrese un nombre válido';
+                    } else {
+                      return null;
+                    }
+                  },
+              onChanged: (value) => bloc.changeName(value),
+            );
           },
-          onChanged: (value) => bloc.changeName(value),
-        );
-      },
     );
   }
 
@@ -206,6 +194,10 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
       stream: bloc.lastNameStream,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: dermatologo.apellido,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
@@ -236,9 +228,8 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
         return TextFormField(
           initialValue: dermatologo.codigo,
           textCapitalization: TextCapitalization.sentences,
+          inputFormatters: [new LengthLimitingTextInputFormatter(6),FilteringTextInputFormatter.digitsOnly],
           keyboardType: TextInputType.number,
-          // maxLength: 3,
-          inputFormatters: [new LengthLimitingTextInputFormatter(6)],
           decoration: InputDecoration(
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(20.0)),
@@ -249,9 +240,13 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
           onSaved: (value) => dermatologo.codigo = value,
           validator: (value) {
             if (value.length < 6) {
-              return 'Ingrese un cmp válido';
+              return 'Ingrese un CMP válido';
+            } else{
+            if(utils.isCMP(value)==false){
+              return 'El CMP debe contener solo números';
             } else {
               return null;
+            }
             }
           },
           onChanged: (value) => bloc.changeCmp(value),
@@ -317,85 +312,101 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
   }
 
   Widget _crearimagenCarnet(RegistrarDermatologoBloc bloc) {
-      return StreamBuilder(
+    return StreamBuilder(
         stream: bloc.imagenPerfilStream,
         builder: (context, snapshot) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Inserte su foto tamaño carnet", style: TextStyle(fontSize: 15)),
-              RaisedButton(  
-                child: Row(
-                  children: [
-                    Text("Subir",style:TextStyle(color: snapshot.hasData ? Color.fromRGBO(143, 148, 251, 6) : null)),
-                    SizedBox(width: 10),
-                    Icon(Icons.cloud_upload, color: snapshot.hasData ? Color.fromRGBO(143, 148, 251, 6) : null )
-                  ],
-                ),
-                onPressed:(){
-                  _seleccionarFoto(bloc);
-                }
-              )
-              
+              Text("Inserte su foto tamaño carnet",
+                  style: TextStyle(fontSize: 15)),
+              RaisedButton(
+                  child: Row(
+                    children: [
+                      Text("Subir",
+                          style: TextStyle(
+                              color:
+                                  snapshot.hasData ? Colors.amber[800] : null)),
+                      SizedBox(width: 10),
+                      Icon(Icons.cloud_upload,
+                          color: snapshot.hasData ? Colors.amber[800] : null)
+                    ],
+                  ),
+                  onPressed: () {
+                    _seleccionarFoto(bloc);
+                  })
             ],
           );
-        }
-      );
-    }
+        });
+  }
 
   Widget _crearimagenDni(RegistrarDermatologoBloc bloc) {
-      return StreamBuilder(
+    return StreamBuilder(
         stream: bloc.imagenDniStream,
         builder: (context, snapshot) {
-          return Row(            
+          return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Ingrese foto de su DNI", style: TextStyle(fontSize: 15)),
-              RaisedButton(  
-                child: Row(
-                  children: [
-                    Text("Subir",style:TextStyle(color: snapshot.hasData ? Color.fromRGBO(143, 148, 251, 6) : null)),
-                    SizedBox(width: 10),
-                    Icon(Icons.cloud_upload, color: snapshot.hasData ? Color.fromRGBO(143, 148, 251, 6): null )
-                  ],
-                ),
-                onPressed:(){
-                  _seleccionarDNI(bloc);
-                }
-              )
-              
+              RaisedButton(
+                  child: Row(
+                    children: [
+                      Text("Subir",
+                          style: TextStyle(
+                              color:
+                                  snapshot.hasData ? Colors.amber[800] : null)),
+                      SizedBox(width: 10),
+                      Icon(Icons.cloud_upload,
+                          color: snapshot.hasData ? Colors.amber[800] : null)
+                    ],
+                  ),
+                  onPressed: () {
+                    _seleccionarDNI(bloc);
+                  })
             ],
           );
-        }
-      );
-    }
+        });
+  }
 
   Widget _crearBoton(BuildContext context, RegistrarDermatologoBloc bloc) {
     return StreamBuilder(
         stream: bloc.formValidStreamWithPhoto,
-        builder: (BuildContext ctx, AsyncSnapshot snapshot) {
+        builder: (BuildContext ctx, AsyncSnapshot snapshotform) {
           print('registrar estado');
-          print(snapshot.hasData);
-          return RaisedButton(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 95.0, vertical: 10.0),
-                child: Text('Registrar', style: TextStyle(fontSize: 18.0)),
-              ),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              elevation: 0.0,
-              color: Color.fromRGBO(143, 148, 251, 1),
-              textColor: Colors.white,
-              onPressed: snapshot.hasData
-                  ? () {
-                      mostrarSnackBar(Icons.thumb_up,
-                              'Solicitud de registro enviada. Por favor, revise su correo',
-                              Color.fromRGBO(143, 148, 251, 6)); 
-                      _submit(context);
-                      bloc.dispose();
-                    }
-                  : null,
-          );
+          print(snapshotform.hasData);
+          return StreamBuilder<Object>(
+              stream: _connectivityProvider.connectivityStream,
+              initialData: true,
+              builder: (context, snapshot) {
+                var isConnected = snapshot.data;
+                if (isConnected != null) {
+                  if (isConnected == true) {
+                    _connectivityProvider.setShowError(true);
+                  }
+                }
+                return RaisedButton(
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 95.0, vertical: 10.0),
+                    child: Text('Registrar', style: TextStyle(fontSize: 18.0)),
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  elevation: 0.0,
+                  color: Colors.amber,
+                  textColor: Colors.white,
+                  onPressed: snapshotform.hasData
+                      ? () {
+
+                          if (_connectivityBloc.conectividad == true) {
+                            _submit(context);
+                          } else {
+                            _connectivityProvider.setShowError(false);
+                          }
+                        }
+                      : null,
+                );
+              });
         });
   }
 
@@ -414,12 +425,13 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
         textColor: Colors.white,
         onPressed: () {
           // Navigator.pushNamed(context, 'login');
-          /* bloc.changeName(null);
-          bloc.changeLastName(null);
-          bloc.changeCmp(null);
-          bloc.changeEmail(null);
-          bloc.changePassword(null);
-          bloc.changeImagenDni(null); */
+          bloc.changeName('');
+          bloc.changeLastName('');
+          bloc.changeCmp('');
+          bloc.changeEmail('');
+          bloc.changePassword('');
+          bloc.changeImagenPerfil(null);
+          bloc.changeImagenDni(null);
           Navigator.pushNamedAndRemoveUntil(context, 'login', (route) => false);
         },
       ),
@@ -427,9 +439,10 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
   }
 
   void mostrarSnackBar(IconData icon, String mensaje, Color color) {
-      final snackbar = mySnackBar(icon, mensaje, color);
-      scaffoldKey.currentState.showSnackBar(snackbar);
+    final snackbar = mySnackBar(icon, mensaje, color);
+    scaffoldKey.currentState.showSnackBar(snackbar);
   }
+
   void _showMesssageDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -454,12 +467,10 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
     formKey.currentState.save();
 
     if (fotoProfile != null) {
-      dermatologo.imagenProfile = await dermatologoBloc
-          .subirFoto(fotoProfile); 
+      dermatologo.imagenProfile = await dermatologoBloc.subirFoto(fotoProfile);
     }
     if (fotoDni != null) {
-      dermatologo.imagenDni= await dermatologoBloc
-          .subirFoto(fotoDni); 
+      dermatologo.imagenDni = await dermatologoBloc.subirFoto(fotoDni);
     }
 
     Map respuestaLogin = await usuarioProvider.registrar(
@@ -475,12 +486,25 @@ class _RegistroDermatologoPageState extends State<RegistroDermatologoPage> {
       await dermatologoBloc.crearDermatologo(dermatologo, solicitudValidacion);
       await usuarioProvider.enviarVerificacionPorCorreo(dermatologo.correo);
 
-      Navigator.pushReplacementNamed(context, 'login');
+      bloc.changeName('');
+      bloc.changeLastName('');
+      bloc.changeCmp('');
+      bloc.changeEmail('');
+      bloc.changePassword('');
+      bloc.changeImagenPerfil(null);
+      bloc.changeImagenDni(null);
+      mostrarSnackBar(
+          Icons.thumb_up,
+          'Solicitud de registro enviada. Por favor, revise su correo',
+          Colors.amber);
+      //Navigator.pushReplacementNamed(context, 'login');
+      Timer(Duration(seconds: 2), () {
+        Navigator.pushNamedAndRemoveUntil(context, 'login', (route) => false);
+      });
     } else {
       final err = respuestaLogin['mensaje'];
       print('err: ${err}');
-      utils.mostrarAlerta(context, 'El cmp o correo ya fueron registrados');
-
+      utils.mostrarAlerta(context, 'El CMP o correo ya fueron registrados');
     }
 
     print('nombre: ${dermatologo.nombre}');

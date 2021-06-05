@@ -4,7 +4,6 @@ import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
-
 class PreferenciasUsuario {
   static final PreferenciasUsuario _instancia =
       new PreferenciasUsuario._internal();
@@ -45,7 +44,7 @@ class PreferenciasUsuario {
 
   get spfJson {
     return _prefs.getString('_spfJson') ??
-        json.encode([false, false, false, false, true]);
+        json.encode([false, false, false, false, false]);
   }
 
   set spfJson(List<bool> list) {
@@ -105,7 +104,7 @@ class PreferenciasUsuario {
     _prefs.setString('ultimaPagina', value);
   }
 
-  Future suspenderCuenta(String idToken) async {
+  Future<void> suspenderCuenta(String idToken) async {
     final authData = {
       'idToken': idToken,
     };
@@ -118,7 +117,7 @@ class PreferenciasUsuario {
     _prefs.setBool('primeraVez', false);
     _prefs.setString('tipoPiel', '');
     _prefs.setString(
-        '_spfJson', json.encode([false, false, false, false, true]));
+        '_spfJson', json.encode([false, false, false, false, false]));
     _prefs.setString('token', '');
     _prefs.setString('tokenNotification', '');
     _prefs.setString('userIdDB', '');

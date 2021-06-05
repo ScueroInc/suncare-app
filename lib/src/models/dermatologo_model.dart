@@ -22,21 +22,23 @@ String dermatologoModelToJson(DermatologoModel data) =>
     json.encode(data.toJson());
 
 class DermatologoModel {
-  DermatologoModel({
-    this.id,
-    this.nombre,
-    this.apellido,
-    this.codigo,
-    this.nacimiento,
-    this.tipo = "dermatologo",
-    this.correo,
-    this.password,
-    this.password2,
-    this.imagenProfile,
-    this.imagenDni
-  });
+  DermatologoModel(
+      {this.id,
+      this.first = false,
+      this.nombre,
+      this.apellido,
+      this.codigo,
+      this.nacimiento,
+      this.tipo = "dermatologo",
+      this.correo,
+      this.password,
+      this.password2,
+      this.imagenProfile,
+      this.imagenDni,
+      this.order});
 
   String id;
+  bool first;
   String nombre;
   String apellido;
   String codigo;
@@ -47,24 +49,28 @@ class DermatologoModel {
   String password2;
   String imagenProfile;
   String imagenDni;
+  int order=DateTime.now().millisecondsSinceEpoch;
 
   factory DermatologoModel.fromJson(Map<String, dynamic> json) =>
       DermatologoModel(
-        id: json["id"],
-        nombre: json["nombre"],
-        apellido: json["apellido"],
-        codigo: json["codigo"],
-        nacimiento: json["nacimiento"],
-        tipo: json["tipo"],
-        correo: json["correo"],
-        password: json["password"],
-        password2: json["password2"],
-        imagenProfile: json["imagenProfile"],
-         imagenDni: json["imagenDni"]
-      );
+          id: json["id"],
+          first: json["first"],
+          nombre: json["nombre"],
+          apellido: json["apellido"],
+          codigo: json["codigo"],
+          nacimiento: json["nacimiento"],
+          tipo: json["tipo"],
+          correo: json["correo"],
+          password: json["password"],
+          password2: json["password2"],
+          imagenProfile: json["imagenProfile"],
+          imagenDni: json["imagenDni"],
+          order: json["order"]);
+
 
   Map<String, dynamic> toJson() => {
         "id": id,
+        "first": first,
         "nombre": nombre,
         "apellido": apellido,
         "codigo": codigo,
@@ -73,6 +79,7 @@ class DermatologoModel {
         "correo": correo,
         // "password": password,
         "imagenProfile": imagenProfile,
-        "imagenDni": imagenDni
+        "imagenDni": imagenDni,
+         "order":order,
       };
 }

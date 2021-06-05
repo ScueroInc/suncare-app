@@ -24,14 +24,16 @@ class PacienteProvider {
     var idUsuario = _preferencia.userIdDB;
 
     var respuestaFirebase =
-        await pacientes.doc(idUsuario).collection('mensaje');
+        await pacientes.doc(idUsuario).collection('mensaje').orderBy('fecha', descending: true);
 
     await respuestaFirebase.get().then((listaFB) {
       listaFB.docs.forEach((element) {
         print(element["idMedico"]);
+        var date = DateTime.fromMillisecondsSinceEpoch(element["fecha"]);
+        print("mensaje obtenido ${date.toString()}");
         listaMensajes.add(MensajeModel(
           idMedico: element["idMedico"],
-          fecha: element["fecha"],
+          fecha:date.toString(),
           mensaje: element["mensaje"],
         ));
       });

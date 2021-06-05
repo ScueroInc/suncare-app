@@ -18,8 +18,7 @@ class Validators {
       }
     } else {
       if (email == '') {
-        sink.addError('');
-      } else {
+        } else {
         sink.addError('Correo no válido');
       }
     }
@@ -39,11 +38,8 @@ class Validators {
       if (email.contains('yopmail')) {
         sink.addError('Correo no válido');
       } else {
-        // _validarEmailBD(email, usuarioProvider, sink);
         compararEmail(email, usuarios, derma, sink);
         sink.add(email);
-
-        // sink.add(email);
       }
     } else {
       sink.addError('Correo no válido');
@@ -58,26 +54,22 @@ class Validators {
       sink.add(password);
     } else {
       if (password == '') {
-        sink.addError('');
       } else {
-        // sink.addError('Correo no válido');
-        // sink.addError('Más de 6 caracteres por favor');
         sink.addError(
-            'La contraseña debe poseer entre 8 y 16 caracteres,\n incluyendo por lo menos una mayúscula y \n caracter especial');
+            'La contraseña debe poseer entre  8 y 16\ncaracteres, incluyendo por lo menos\nuna mayúscula y un carácter especial.');
       }
     }
   });
 
   final validarPasswordLogin = StreamTransformer<String, String>.fromHandlers(
       handleData: (password, sink) {
-    if (password.length >= 8) { //Changed
+    if (password.length >= 6) {
       sink.add(password);
     } else {
       if (password == '') {
         sink.addError('');
       } else {
-        // sink.addError('Correo no válido');
-        sink.addError('Más de 8 caracteres por favor'); //Changed
+        sink.addError('Ingresar más de 8 caracteres por favor');
       }
     }
   });
@@ -88,11 +80,8 @@ class Validators {
       sink.add(cmp);
     } else {
       if (cmp == '') {
-        sink.addError('');
       } else {
-        // sink.addError('Correo no válido');
-      // sink.addError('El dermatólogo no esta registrado');
-      sink.addError('El CMP es incorrecto');
+      sink.addError('CMP incorrecto');
       }
     }
   });
@@ -103,15 +92,17 @@ class Validators {
         FirebaseFirestore.instance.collection('dermatologos');
     if (cmp.length == 6) {
       verificarCmp(cmp, derma, sink);
-      // sink.add(cmp);
     } else {
-      sink.addError('El CMP es incorrecto');
+      if (cmp == '') {
+      } else{
+      sink.addError('CMP no válido');
+      }
     }
   });
 
   final validarName =
       StreamTransformer<String, String>.fromHandlers(handleData: (name, sink) {
-    final validCharacters = RegExp(r'^[a-zA-Z\u00f1\u00d1]+\s?[a-zA-z&%=\u00f1\u00d1]+$');
+    final validCharacters = RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1]+\s?[a-zA-zÀ-ÿ-z&%=\u00f1\u00d1]+$');
     //final validCharacters = RegExp(r'^[a-zA-Z&%=]+$');
 
     if (name.length >= 3 && name.length <= 30) {
@@ -121,10 +112,9 @@ class Validators {
         sink.addError('Datos no válidos');
       }
     } else {
-      if (name == '') {
-        sink.addError('');
+      if (name == '' || name.length == 0) {
       } else {
-        sink.addError('Más de 3 caracteres por favor');
+        sink.addError('Ingresar más de 3 caracteres por favor');
       }
     }
   });
@@ -147,10 +137,7 @@ class Validators {
 
   final validarLastname = StreamTransformer<String, String>.fromHandlers(
       handleData: (lastName, sink) {
-    final validCharacters = RegExp(r'^[a-zA-Z\u00f1\u00d1&%=]+\s[a-zA-z&%=\u00f1\u00d1]+$');
-   
-    // final validCharacters = RegExp(r'^[a-zA-Z&%=]+$');
-
+    final validCharacters = RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1&%=]+\s[a-zA-ZÀ-ÿ-z&%=\u00f1\u00d1]+$');
     if (lastName.length >= 4 && lastName.length <= 30) {
       if (validCharacters.hasMatch(lastName)) {
         sink.add(lastName);
@@ -159,10 +146,10 @@ class Validators {
       }
     } else {
       if (lastName == '') {
-        sink.addError('');
+        //sink.addError('');
       } else {
         // sink.addError('Más de 3 caracteres por favor');
-        sink.addError('Más de 4 caracteres por favor');
+        sink.addError('Ingresar más de 3 caracteres por favor');
       }
     }
   });
@@ -176,7 +163,7 @@ Future verificarCmp(
     if (value.size > 0) {
       sink.add(cmp);
     } else {
-      sink.addError('El dermatólogo no esta registrado');
+      sink.addError('Dermatólogo no \nregistrado');
     }
   });
 }

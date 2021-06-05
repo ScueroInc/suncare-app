@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/paciente_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuPerfil extends StatefulWidget {
   @override
@@ -33,6 +36,21 @@ class _MenuPerfilState extends State<MenuPerfil> {
   PacienteModel paciente = new PacienteModel();
 
   PacienteBloc pacienteBloc;
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
+  bool _source = true;
+
+  @override
+  void initState() { 
+    super.initState();
+     _connectivityProvider.initialize();
+    _connectivityProvider.connectivityStream.listen((source) { 
+      if(mounted){
+        setState(() {
+        _source = source;
+        });
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -41,18 +59,18 @@ class _MenuPerfilState extends State<MenuPerfil> {
     super.didChangeDependencies();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final idUser = _preferencia.userIdDB;
 
     pacienteBloc = Provider.of_PacienteBloc(context);
     pacienteBloc.buscarPaciente(idUser);
+
     return Container(
       child: Scaffold(
         key: scaffoldKey,
         appBar: AppBar(
-          backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+          backgroundColor: Colors.amber,
           centerTitle: true,
           title: Text('Perfil de usuario'),
           leading: IconButton(
@@ -79,41 +97,56 @@ class _MenuPerfilState extends State<MenuPerfil> {
           ],
         ),
         body: SingleChildScrollView(
-          child: Container(
-            padding: EdgeInsets.only(left: 16, top: 25, right: 16),
-            child: StreamBuilder(
-              stream: pacienteBloc.pacienteBuscadoStream,
-              builder: (BuildContext context,
-                  AsyncSnapshot<PacienteModel> snapshot) {
-                print('-------0 ${snapshot.data}');
-                if (snapshot.hasData) {
-                  // PacienteModel paciente = snapshot.data;
-                  print('-------0 ${snapshot.data.tipoPiel}');
-                  paciente = snapshot.data;
-                  if (paciente.tipoPiel != null) {
-                    _tipoDePiel = paciente.tipoPiel;
+          child: Stack(
+            children: [Container(
+              padding: EdgeInsets.only(left: 16, top: 25, right: 16),
+              child: StreamBuilder(
+                stream: pacienteBloc.pacienteBuscadoStream,
+                builder: (BuildContext context,
+                    AsyncSnapshot<PacienteModel> snapshot) {
+                  print('-------0 ${snapshot.data}');
+                  if (snapshot.hasData) {
+                    // PacienteModel paciente = snapshot.data;
+                    print('-------0 ${snapshot.data.tipoPiel}');
+                    paciente = snapshot.data;
+                    if (paciente.tipoPiel != null) {
+                      _tipoDePiel = paciente.tipoPiel;
+                    }
+                    return Form(
+                      key: formKey,
+                      child: Column(
+                        children: <Widget>[
+                          _mostrarFoto(),
+                          _mostrarNombre(),
+                          _mostrarApellido(),
+                          _mostrarCorreo(),
+                          _mostrarNacimiento(),
+                          _mostrarTipoPiel(),
+                          SizedBox(height: 20),
+                          // _mostrarAcciones(),
+                          // _suspenderCuenta()
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Center(child: CircularProgressIndicator());
                   }
-                  return Form(
-                    key: formKey,
-                    child: Column(
-                      children: <Widget>[
-                        _mostrarFoto(),
-                        _mostrarNombre(),
-                        _mostrarApellido(),
-                        _mostrarCorreo(),
-                        _mostrarNacimiento(),
-                        _mostrarTipoPiel(),
-                        SizedBox(height: 20),
-                        // _mostrarAcciones(),
-                        // _suspenderCuenta()
-                      ],
-                    ),
-                  );
-                } else {
-                  return Center(child: CircularProgressIndicator());
-                }
-              },
+                },
+              ),
             ),
+            utils.mostrarInternetConexion(_source)
+            /* StreamBuilder(
+              stream: _connectivityProvider.connectivityStream ,
+              initialData: true,
+              builder: (BuildContext context, AsyncSnapshot snapshot){
+                var isConnected = snapshot.data;
+                if(isConnected != null){
+                  _connectivityProvider.setShowError(isConnected);
+                }
+                return utils.mostrarInternetConexionWithStream(_connectivityProvider);
+              },
+            ), */
+            ]
           ),
         ),
       ),
@@ -185,7 +218,7 @@ class _MenuPerfilState extends State<MenuPerfil> {
     return TextFormField(
       initialValue: paciente.apellido,
       enabled: false,
-      decoration: InputDecoration(labelText: 'Apellido'),
+      decoration: InputDecoration(labelText: 'Apellidos'),
       onSaved: (value) => paciente.apellido = value,
     );
   }
@@ -233,8 +266,8 @@ class _MenuPerfilState extends State<MenuPerfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Suspender Cuenta'),
-        content: Text(message),
+        title: Text('Suspender Cuenta', textAlign: TextAlign.center),
+        content: Text(message, textAlign: TextAlign.center),
         actions: <Widget>[
           FlatButton(
             child: Text('Si'),
@@ -330,7 +363,7 @@ class _MenuPerfilState extends State<MenuPerfil> {
               style: TextStyle(color: Colors.white),
             ),
           ),
-          color: Color.fromRGBO(143, 148, 251, 1),
+          color: Colors.amber[800],
           elevation: 2,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

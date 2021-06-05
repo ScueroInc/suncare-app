@@ -22,6 +22,7 @@ String pacienteModelToJson(PacienteModel data) => json.encode(data.toJson());
 class PacienteModel {
   PacienteModel(
       {this.id,
+      this.first = false,
       this.nombre,
       this.apellido,
       this.nacimiento,
@@ -36,6 +37,7 @@ class PacienteModel {
       this.vinculacionIdMedico});
 
   String id;
+  bool first;
   String nombre;
   String apellido;
   String nacimiento;
@@ -51,6 +53,7 @@ class PacienteModel {
 
   factory PacienteModel.fromJson(Map<String, dynamic> json) => PacienteModel(
         id: json["id"],
+        first: json["first"],
         nombre: json["nombre"],
         apellido: json["apellido"],
         nacimiento: json["nacimiento"],
@@ -67,6 +70,7 @@ class PacienteModel {
 
   Map<String, dynamic> toJson() => {
         "id": id,
+        "first": first,
         "nombre": nombre,
         "apellido": apellido,
         "nacimiento": nacimiento,
@@ -83,7 +87,7 @@ class PacienteModel {
 
   int miEdad() {
     int edad;
-    var fechaDeHoy = DateTime.now();
+    var fechaDeHoy = DateTime.now(); //
     int anioActual = fechaDeHoy.year;
     int nacimineto = int.parse(this.nacimiento.substring(0, 4));
 

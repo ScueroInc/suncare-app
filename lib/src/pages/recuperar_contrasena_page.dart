@@ -1,4 +1,3 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:suncare/src/bloc/provider.dart';
@@ -6,10 +5,9 @@ import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/bloc/recuperarContrasena_bloc.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/models/paciente_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/providers/usuario_provider.dart';
 import 'package:suncare/src/utils/utils.dart' as utils;
-import 'package:flutter/material.dart';
-import 'package:flutter_offline/flutter_offline.dart';
 
 class RecuperarContrasenaPage extends StatefulWidget {
   @override
@@ -27,15 +25,23 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
   PacienteModel paciente = new PacienteModel();
   DermatologoBloc dermatologoBloc;
   DermatologoModel dermatologoModel = new DermatologoModel();
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
 
   @override
   Widget build(BuildContext context) {
+    
     return SafeArea(
         child: Scaffold(
             resizeToAvoidBottomInset: false,
-            body: Container(
-              padding: EdgeInsets.all(15.0),
-              child: _formularioRecuperarContrasena(context),
+            body: Stack(
+              children: [
+                
+                Container(
+                  padding: EdgeInsets.all(15.0),
+                  child: _formularioRecuperarContrasena(context),
+                ),
+                utils.mostrarInternetConexionWithStream(_connectivityProvider)
+              ],
             )));
   }
 
@@ -45,6 +51,7 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
     return Form(
         key: formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(height: 30),
             _titlePage(),
@@ -60,8 +67,9 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
 
   Widget _titlePage() {
     return Text('Recuperar contraseña',
+    textAlign: TextAlign.center,
         style:
-            TextStyle(fontSize: 28.0, color: Color.fromRGBO(143, 148, 251, 1)));
+            TextStyle(fontSize: 28.0, color: Colors.amber[800]));
   }
 
   Widget _crearCorreo(RecuperarContrasenaBloc bloc) {
@@ -95,26 +103,44 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
     return StreamBuilder(
         stream: bloc.formValidStream,
         // initialData: null,
-        builder: (BuildContext ctx, AsyncSnapshot snapshot) {
+        builder: (BuildContext ctx, AsyncSnapshot snapshotform) {
           return SizedBox(
-            width: 180, //Changed
+            width: 300,
             height: 40,
-            child: RaisedButton(
-              child: Container(
-                child: Text('Recuperar',
-                    style: TextStyle(fontSize: 18.0)),
-              ),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25.0)),
-              elevation: 0.0,
-              color: Color.fromRGBO(143, 148, 251, 1),
-              textColor: Colors.white,
-              onPressed: snapshot.hasData
-                  ? () {
-                      usuarioProvider.enviarRecuperarContrasena(bloc.email);
-                      _showMesssageDialog('Se envió un correo');
-                    }
-                  : null,
+            child: StreamBuilder(
+              stream: _connectivityProvider.connectivityStream ,
+              initialData: true,
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                var isConnected = snapshot.data;
+                if(isConnected != null){                           
+                  if(isConnected == true){
+                    _connectivityProvider.setShowError(true);
+                  }
+                }
+                return RaisedButton(
+                  child: Container(
+                    child: Text('Recuperar',
+                        style: TextStyle(fontSize: 18.0)),
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.0)),
+                  elevation: 0.0,
+                  color: Colors.amber,
+                  textColor: Colors.white,
+                  onPressed: snapshotform.hasData
+                      ? () {
+                        if(isConnected != null) {
+                            if(isConnected == true) {
+                              usuarioProvider.enviarRecuperarContrasena(bloc.email);
+                              _showMesssageDialog('Por favor revise su correo');
+                            } else {
+                              _connectivityProvider.setShowError(false);
+                            }
+                        }
+                      }
+                      : null,
+                );
+              }
             ),
           );
         });
@@ -124,7 +150,7 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Cambio de contraseña'),
+        title: Text('Restablecer contraseña'),
         content: Column(
           mainAxisSize: MainAxisSize.min, 
           children: <Widget>[
@@ -132,7 +158,7 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
             SizedBox(height: 20),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
               FlatButton(
-                  child: Text('Aceptar',style: TextStyle(color: Color.fromRGBO(143, 148, 251, 6))),
+                  child: Text('Aceptar',style: TextStyle(color: Colors.amber[800])),
                   onPressed: () {
                     Navigator.of(ctx).pop();
                     Navigator.pushReplacementNamed(context, 'login');
@@ -145,7 +171,7 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
 
   Widget _crearCancelar(BuildContext context) {
     return SizedBox(
-      width: 180, //Changed
+      width: 300,
       height: 40,
       child: RaisedButton(
         child: Container(
@@ -156,36 +182,10 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
         elevation: 0.0,
         color: Color.fromRGBO(245, 90, 90, 1),
         textColor: Colors.white,
-        onPressed: checkConnection
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, 'login');
+        },
       ),
     );
   }
-
-
-
-  checkConnection() async {
-    var connection = await Connectivity().checkConnectivity();
-    if(connection == ConnectivityResult.none){
-      return AwesomeDialog(
-        context: context,
-        dialogType: DialogType.ERROR,
-        animType: AnimType.RIGHSLIDE,
-        title: 'En este momento no tienes conexión',
-        desc: '',
-      )..show();
-    }
-    else  {
-      return AwesomeDialog(
-        context: context,
-        dialogType: DialogType.SUCCES,
-        animType: AnimType.TOPSLIDE,
-        title: 'Se restauró la conexión a Internet',
-        desc: '',
-      )..show();
-    }
-  }
-
-
-
-
 }

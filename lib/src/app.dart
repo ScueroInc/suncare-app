@@ -21,6 +21,7 @@ import 'package:suncare/src/pages/registro_dermatologo_page.dart';
 import 'package:suncare/src/pages/registro_page.dart';
 import 'package:suncare/src/pages/registro_usuario_page.dart';
 import 'package:suncare/src/pages/menu_solicitud_pendiente_page.dart';
+import 'package:suncare/src/pages/acceso_bluetooth.dart';
 import 'package:suncare/src/widgets/administrarCuenta.dart';
 
 class MyApp extends StatelessWidget {
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         child: MaterialApp(
+            theme: ThemeData(primarySwatch: Colors.amber),
             debugShowCheckedModeBanner: false,
             localizationsDelegates: [
               GlobalMaterialLocalizations.delegate,
@@ -69,6 +71,7 @@ class MyApp extends StatelessWidget {
               'home_dermatologo': (BuildContext context) =>
                   HomeDermatologoPage(),
               'solicitudes': (BuildContext context) => SolicitudPendientePage(),
+              'acceso_bluetooth': (BuildContext context) => AccesoBluetooth()
             }));
   }
 }

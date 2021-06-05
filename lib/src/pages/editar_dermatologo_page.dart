@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:suncare/src/bloc/dermatologo_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class EditarDermatoloPage extends StatefulWidget {
   @override
@@ -22,6 +25,8 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
   DermatologoModel dermatologo = new DermatologoModel();
   DermatologoBloc dermatologoBloc;
 
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
+
   @override
   Widget build(BuildContext context) {
     final idUser = _preferencia.userIdDB;
@@ -31,7 +36,7 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+        backgroundColor: Colors.amber,
         title: Text('Modificar perfil'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -41,44 +46,49 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
         ),
       ),
       body: SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.only(left: 16, top: 25, right: 16),
-          child: StreamBuilder(
-            stream: dermatologoBloc.dermatologoBuscadoStream,
-            builder: (BuildContext context,
-                AsyncSnapshot<DermatologoModel> snapshot) {
-              // print('-------0 ${snapshot.data}');
-              if (snapshot.hasData) {
-                dermatologo = snapshot.data;
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.only(left: 16, top: 25, right: 16),
+              child: StreamBuilder(
+                stream: dermatologoBloc.dermatologoBuscadoStream,
+                builder: (BuildContext context,
+                    AsyncSnapshot<DermatologoModel> snapshot) {
+                  // print('-------0 ${snapshot.data}');
+                  if (snapshot.hasData) {
+                    dermatologo = snapshot.data;
 
-                return Form(
-                  key: formKey,
-                  child: Column(
-                    children: <Widget>[
-                      SizedBox(height: 100),
-                      // _mostrarFoto(),
-                      SizedBox(height: 20),
-                      _mostrarNombre(dermatologoBloc),
-                      SizedBox(height: 20),
-                      _mostrarApellido(dermatologoBloc),
-                      SizedBox(height: 20),
-                      _mostrarCorreo(dermatologoBloc),
-                      // _mostrarNacimiento(),
-                      // _mostrarTipoPiel(),
-                      SizedBox(height: 40),
-                      _mostrarAcciones(dermatologoBloc),
-                      SizedBox(height: 20),
+                    return Form(
+                      key: formKey,
+                      child: Column(
+                        children: <Widget>[
+                          SizedBox(height: 100),
+                          // _mostrarFoto(),
+                          SizedBox(height: 20),
+                          _mostrarNombre(dermatologoBloc),
+                          SizedBox(height: 20),
+                          _mostrarApellido(dermatologoBloc),
+                          SizedBox(height: 20),
+                          _mostrarCorreo(dermatologoBloc),
+                          // _mostrarNacimiento(),
+                          // _mostrarTipoPiel(),
+                          SizedBox(height: 40),
+                          _mostrarAcciones(dermatologoBloc),
+                          SizedBox(height: 20),
 
-                      _crearCancelar(context),
-                      // _suspenderCuenta()
-                    ],
-                  ),
-                );
-              } else {
-                return Center(child: CircularProgressIndicator());
-              }
-            },
-          ),
+                          _crearCancelar(context),
+                          // _suspenderCuenta()
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
+            ),
+            utils.mostrarInternetConexionWithStream(_connectivityProvider)
+          ],
         ),
       ),
     );
@@ -90,6 +100,10 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
       initialData: bloc.changeName(dermatologo.nombre),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: dermatologo.nombre,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
@@ -109,9 +123,13 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
       initialData: bloc.changeLastName(dermatologo.apellido),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: dermatologo.apellido,
           decoration: InputDecoration(
-            labelText: 'Apellido',
+            labelText: 'Apellidos',
             errorText: snapshot.error,
           ),
           onSaved: (value) => dermatologo.apellido = value,
@@ -178,30 +196,47 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
       children: [
         StreamBuilder(
           stream: bloc.formValidStream,
-          builder: (BuildContext ctx, AsyncSnapshot snapshot) {
-            return RaisedButton(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
-                child: Text(
-                  'Guardar',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              color: Color.fromRGBO(143, 148, 251, 1),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              onPressed: snapshot.hasData
-                  ? () {
-                      // _showMesssageDialog(context, 'Registro exitoso');
-                      mostrarSnackBar(
-                          Icons.thumb_up,
-                          'Cambios guardados con éxito',
-                          Color.fromRGBO(143, 148, 251, 6));
-                      _submit(context);
+          builder: (BuildContext ctx, AsyncSnapshot snapshotform) {
+            return StreamBuilder(
+                stream: _connectivityProvider.connectivityStream,
+                initialData: true,
+                builder: (context, snapshot) {
+                  var isConnected = snapshot.data;
+                  if (isConnected != null) {
+                    if (isConnected == true) {
+                      _connectivityProvider.setShowError(true);
                     }
-                  : null,
-            );
+                  }
+                  return RaisedButton(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 80.0, vertical: 15.0),
+                      child: Text(
+                        'Guardar',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    color: Colors.amber,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    onPressed: snapshotform.hasData
+                        ? () {
+                            if (isConnected != null) {
+                              if (isConnected == true) {
+                                mostrarSnackBar(
+                                    Icons.thumb_up,
+                                    'Cambios guardados con éxito',
+                                    Colors.amber);
+                                _submit(context);
+                              } else {
+                                _connectivityProvider.setShowError(false);
+                              }
+                            }
+                          }
+                        : null,
+                  );
+                });
           },
         )
       ],
@@ -218,6 +253,7 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
           .subirFoto(foto); //productoProvider.subirImagen(foto);
     }
 
+    dermatologo.first = true;
     await dermatologoBloc.editarDermatologo(dermatologo);
     print('_submit primeraVez -> ${_preferencia.primeraVez}');
     if (_preferencia.primeraVez == false) {
@@ -227,16 +263,16 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
     }
     Navigator.pushReplacementNamed(context, 'home_dermatologo');
     mostrarSnackBar(Icons.thumb_up, 'Cambios guardados con éxito',
-        Color.fromRGBO(143, 148, 251, 6));
+        Colors.amber);
   }
 
   Widget _crearCancelar(BuildContext context) {
     return SizedBox(
       width: 250,
       height: 45,
-      child: RaisedButton(
+      /* child: RaisedButton(
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
+          padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 15.0),
           child: Text(
             'Cancelar',
             style: TextStyle(color: Colors.white),
@@ -248,7 +284,20 @@ class _EditarDermatoloPageState extends State<EditarDermatoloPage> {
         onPressed: () {
           Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
         },
-      ),
+      ), */
+      child: Container(
+          child: RaisedButton(
+        child: Text(
+          'Cancelar',
+          style: TextStyle(color: Colors.white),
+        ),
+        color: Color.fromRGBO(245, 90, 90, 1),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
+        },
+      )),
       // child: RaisedButton(
       //   child: Container(
       //       padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),

@@ -1,15 +1,26 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:slide_countdown_clock/slide_countdown_clock.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/data_bloc.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/clima_model.dart';
+import 'package:permission_handler_platform_interface/permission_handler_platform_interface.dart';
+import 'package:permission_handler/permission_handler.dart' as gpsPermition;
+import 'package:suncare/src/providers/connectivity_provider.dart';
+
+import 'package:flutter_countdown_timer/current_remaining_time.dart';
+import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
+// import 'package:slide_countdown_clock/slide_countdown_clock.dart';
+import 'package:suncare/src/bloc/bluetooth_bloc.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class Tab_Home extends StatefulWidget {
   @override
@@ -19,178 +30,61 @@ class Tab_Home extends StatefulWidget {
 class _Tab_HomeState extends State<Tab_Home> {
   Position _currentPosition;
   String _currentAddress;
+  BluetoothBloc _bluetoothBloc;
+  Future<String> _futurePosition;
+  Future<bool> _futureGpsOn;
+  ConnectivityBloc _connectivityBloc;
+  // @override
+  //  void didChangeDependencies() {
+  //   super.didChangeDependencies();
 
-  //StreamSubscription<Position> _positionStream;
+  //   Timer.periodic(Duration(seconds: 5), (timer) async{
+
+  //     //dataCoreBloc.insertarTiempoMaximoYVitaminaD([false, false, false, false,true]);
+  //   });
+
+  // }
 
   @override
-  void dispose() {
-   // _positionStream.cancel();
-    super.dispose();  
-  }
-  
-  @override
-   void didChangeDependencies() {
-    super.didChangeDependencies();
-    
-    //dataCoreBloc = Provider.of_DataCoreBloc(context);
-    Timer.periodic(Duration(seconds: 5), (timer) async{
-    // _getCurrentLocation2();
-     //_currentPosition = await _getCurrentLocation2();
-     //_currentAddress = _getAddressFromLatLng2(_currentPosition);
-      /* print("location");
-
-      print(_currentPosition.latitude);
-      print(_currentPosition.longitude);
-      print(_currentAddress);
-      print("End location"); */
-      //dataCoreBloc.insertarTiempoMaximoYVitaminaD([false, false, false, false,true]);
-    }); 
-
-  }
-  @override
-  void initState() { 
+  void initState() {
     super.initState();
-    _getCurrentLocation2();
-  }
- 
-  void intetoConLocation(){
-    //var locationOptions = LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
-    /* _positionStream = Geolocator.getPositionStream(desiredAccuracy:LocationAccuracy.high ).listen((Position position) {
-      setState(() {
-        print(position);
-        _currentPosition = position;
-      });
-
-      
-    }); */
+    _futureGpsOn = gpsIsOn();
+    _futurePosition = showLocationFuture();
   }
 
-  void showLocation() async {
-    try {
-      var serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if(serviceEnabled) {
-        _getCurrentLocation2();
-        print("location");
+  Future<String> showLocationFuture() async {
+    var serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (serviceEnabled) {
+      _currentPosition = await getPositionFuture();
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          _currentPosition.latitude, _currentPosition.longitude);
+      Placemark place = placemarks[0];
+      print("start place");
+      print(place);
+      print("end place");
+      print("location");
+
+      _currentAddress =
+          "${place.locality}, ${place.subAdministrativeArea}, ${place.country}";
 
       print(_currentPosition.latitude);
       print(_currentPosition.longitude);
       print(_currentAddress);
       print("End location");
-      } else {
-        print("DEcir el uusario que encienda el gps");
-        //LocationPermission permission = await Geolocator.requestPermission();
-      }
-    } catch (e){
-      print(e);
+    } else {
+      print("DEcir el uusario que encienda el gps");
+      //LocationPermission permission = await Geolocator.requestPermission();
     }
+    return _currentAddress;
   }
 
- /*  _getCurrentLocation() {
-    Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.best,
-            forceAndroidLocationManager: true)
-        .then((Position position) {
-      setState(() {
-        _currentPosition = position;
-        _getAddressFromLatLng();
-      });
-    }).catchError((e) {
-      print(e);
-    });
-  } */
-   /* Future _getCurrentLocation2() async {
-    Position position;
-    try {
-      position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-            forceAndroidLocationManager: true);
-      print("esta es position-> ${position}");
-      
-    } catch(e) {
-      position = await Geolocator.getLastKnownPosition();
-      print("esta es position si es error-> ${position}");
-      print("y este es el error $e");
-    }    
-      _currentPosition = position;
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          _currentPosition.latitude, _currentPosition.longitude);
-        
-      Placemark place = placemarks[0];
-
-     
-        setState(() {
-        _currentAddress =
-            "${place.locality}, ${place.subAdministrativeArea},${place.country}";
-          
-        });
-     
-    //return position;
-  }  */
-  //// getcurrent anterior
-  _getCurrentLocation2() async {
-    Position position;
-    try {
-      position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-            forceAndroidLocationManager: true);
-      print("esta es position-> $position");
-      
-    } catch(e) {
-      position = await Geolocator.getLastKnownPosition();
-      print("esta es position si es error-> $position");
-      print(e);
-    }    
-     // _currentPosition = position;
-     if(mounted){
-        setState(() {
-          _currentPosition = position;
-          _getAddressFromLatLng();
-        });
-     }
-    //return position;
-  } 
-
-
-  _getAddressFromLatLng() async {
-    
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          _currentPosition.latitude, _currentPosition.longitude);
-
-      Placemark place = placemarks[0];
-      //print("start place");
-      //print(place);
-      //print("end place");
-
-      setState(() {
-        _currentAddress =
-            "${place.locality}, ${place.subAdministrativeArea},${place.country}";
-      });
-    } catch (e) {
-      print(e);
-    }
+  Future<Position> getPositionFuture() async {
+    return await Geolocator.getCurrentPosition();
   }
 
-  _getAddressFromLatLng2(Position _currentPosition) async {
-    Placemark place;
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          _currentPosition.latitude, _currentPosition.longitude);
-
-      place = placemarks[0];
-      print("start place");
-      print(place);
-      print("end place");
-
-      /* setState(() {
-        _currentAddress =
-            "${place.administrativeArea}, ${place.locality}, ${place.country}";
-      }); */
-    } catch (e) {
-      print(e);
-    }
-    final address= "${place.administrativeArea}, ${place.locality}, ${place.country}";
-    return address;
+  Future<bool> gpsIsOn() async {
+    return await Geolocator.isLocationServiceEnabled();
   }
 
   Future<void> apiLocation() async {
@@ -210,10 +104,35 @@ class _Tab_HomeState extends State<Tab_Home> {
 
   @override
   Widget build(BuildContext context) {
-    final dataCoreBloc = Provider.of_DataCoreBloc(context);
+    this._bluetoothBloc = Provider.of_BluetoothBloc(context);
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     int duracionTotal = 30;
     Duration _duration = Duration(seconds: 10);
 
+    return FutureBuilder(
+        future: _futureGpsOn,
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          print("----->>, ${snapshot.data}");
+          if (snapshot.hasData) {
+            bool isOn = snapshot.data;
+            if (isOn == true) {
+              return _pantallaDatos(context);
+            } else {
+              return Stack(
+                children: [
+                  _showMesssageDialog(
+                      context, "Por favor, encienda la ubicación")
+                ],
+              );
+            }
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        });
+  }
+
+  Widget _pantallaDatos(BuildContext context) {
+    final dataCoreBloc = Provider.of_DataCoreBloc(context);
     return Container(
       padding: EdgeInsets.only(left: 16, top: 25, right: 16),
       child: Container(
@@ -225,8 +144,7 @@ class _Tab_HomeState extends State<Tab_Home> {
               children: [
                 StreamBuilder(
                   stream: dataCoreBloc.iconClimaStream,
-                  initialData:
-                      'https://w7.pngwing.com/pngs/1008/673/png-transparent-weather-forecasting-rain-icon-weather-blue-text-weather-forecasting.png',
+                  initialData: 'assets/img/clock.png',
                   builder:
                       (BuildContext context, AsyncSnapshot<String> snapshot) {
                     return FadeInImage(
@@ -235,32 +153,52 @@ class _Tab_HomeState extends State<Tab_Home> {
                       placeholder: AssetImage('assets/img/clock.png'),
                       fit: BoxFit.cover,
                       // image: NetworkImage('${snapshot.data}'),
-                      image: NetworkImage(
-                          'https://w7.pngwing.com/pngs/1008/673/png-transparent-weather-forecasting-rain-icon-weather-blue-text-weather-forecasting.png'),
+                      image: AssetImage('assets/img/img_default_clima.png'),
+                      // image: NetworkImage(
+                      //     'https://w7.pngwing.com/pngs/1008/673/png-transparent-weather-forecasting-rain-icon-weather-blue-text-weather-forecasting.png'),
                     );
                   },
                 ),
                 StreamBuilder(
-                  stream: dataCoreBloc.climaStream,
-                  initialData: 00.0,
-                  builder:
-                      (BuildContext context, AsyncSnapshot<double> snapshot) {
-                    return Container(
-                      child: Text('${snapshot.data} °  ', 
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize:20, color: Color.fromRGBO(143, 148, 251, 6)))
-                    );
+                  stream: _connectivityBloc.connectivityStream,
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
+                    if (snapshot.data == true) {
+                      dataCoreBloc.insertarDataPrincipal();
+                      return StreamBuilder(
+                        stream: dataCoreBloc.climaStream,
+                        initialData: 00.0,
+                        builder: (BuildContext context,
+                            AsyncSnapshot<double> snapshot) {
+                          print('pipipi 1 ${snapshot.data}');
+                          return Container(
+                              child: Text('${snapshot.data} °  ',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.amber[800])));
+                        },
+                      );
+                    } else {
+                      return Text('0.0 °  ',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.amber[800]));
+                    }
                   },
                 ),
-                StreamBuilder(
-                  stream: dataCoreBloc.condicionClimaStream,
-                  initialData: '',
-                  builder:
-                      (BuildContext context, AsyncSnapshot<String> snapshot) {
-                    return Container(
-                      child: Text('${snapshot.data}', style: TextStyle(fontSize:20)),
-                    );
-                  },
-                )
+                // StreamBuilder(
+                //   stream: dataCoreBloc.condicionClimaStream,
+                //   initialData: '',
+                //   builder:
+                //       (BuildContext context, AsyncSnapshot<String> snapshot) {
+                //     print('pipipi 2 ${snapshot.data}');
+                //     return Container(
+                //       child: Text('${snapshot.data}',
+                //           style: TextStyle(fontSize: 20)),
+                //     );
+                //   },
+                // )
               ],
             ),
             Divider(),
@@ -268,127 +206,244 @@ class _Tab_HomeState extends State<Tab_Home> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                      child: Text('$_currentAddress'),
-                )
-                /* StreamBuilder(
-                  stream: dataCoreBloc.lugarClimaStream,
-                  initialData: '',
-                  builder:
-                      (BuildContext context, AsyncSnapshot<String> snapshot) {
-                    // final name = apiLocation();
-                    return Container(
-                      // child: Text('${snapshot.data}'),
-                      child: Text('${snapshot.data}'),
-                    );
-                  },
+                FutureBuilder(
+                    future: _futurePosition,
+                    builder: (BuildContext context, AsyncSnapshot snapshot) {
+                      print('pipipi ---->> ${snapshot.data}');
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        if (!snapshot.hasError) {
+                          return Text(snapshot.data);
+                        }
+                      } else {
+                        return Row(children: [CircularProgressIndicator()]);
+                      }
+                    }),
+                /* FutureBuilder(
+                  future: _futurePosition,
+                  builder: (BuildContext context, AsyncSnapshot snapshot){
+                    if(snapshot.connectionState == ConnectionState.done){
+                      if( !snapshot.hasError ){
+                        //print(snapshot.data);
+                        return Text('$_currentAddress');
+                      }
+
+                    } else {
+                      return Row(children: [CircularProgressIndicator()]);
+                    }
+
+                  }
                 ), */
-                /*  StreamBuilder(
-                  stream: dataCoreBloc.regionClimaStream,
-                  initialData: '',
-                  builder:
-                      (BuildContext context, AsyncSnapshot<String> snapshot) {
-                    return Container(
-                      child: Text('   ${snapshot.data}', style: TextStyle(fontSize:20)),
-                    );
-                  },
-                ), */
               ],
             ),
-            Divider(),
-            SizedBox(height: 60),
-            Column(
-              children: [
-                Text('Índice de radiación UV', style: TextStyle(fontWeight: FontWeight.bold, fontSize:20, color: Color.fromRGBO(143, 148, 251, 6))),
-                SizedBox(height: 5),
-                StreamBuilder(
-                  stream: dataCoreBloc.uvClimaStream,
-                  initialData: 0.0,
-                  builder:
-                      (BuildContext context, AsyncSnapshot<double> snapshot) {
-                    return Container(
-                      child: Text('${snapshot.data}', style: TextStyle(fontSize:20)),
-                    );
-                  },
-                )
-              ],
-            ),
-            /* Divider(),
-            SizedBox(height: 15),
-            Column(
-              children: [
-                Text('Vitamina D adquirida',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize:20, color: Color.fromRGBO(143, 148, 251, 6))),
-                StreamBuilder(
-                  stream: dataCoreBloc.vitaminaDClimaStream,
-                  initialData: 0.0,
-                  builder:
-                      (BuildContext context, AsyncSnapshot<double> snapshot) {
-                    return Container(
-                      child: Text('${snapshot.data.toStringAsFixed(2)} mcg', style: TextStyle(fontSize:20)),
-                    );
-                  },
-                )
-              ],
-            ), */
-            Divider(),
-            SizedBox(height: 15),
-            Column(
-              children: [
-                Text('Tiempo de exposición segura restante',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize:20, color: Color.fromRGBO(143, 148, 251, 6))),
-                StreamBuilder(
-                  stream: dataCoreBloc.tiempoExposicionStream,
-                  builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-                    return StatefulBuilder(builder: (context, setState) {
-                      print('---! ${snapshot.data}  !---');
-                      // final duration = Duration(seconds: d);
-                      // return SlideCountdownClock(
-                      //   duration: Duration(seconds: duracionTotal),
-                      // );
-                      return (snapshot.data == null)
-                          ? Text('  **  **', style: TextStyle(fontSize:20))
-                          : Column(
-                              children: [
-                                Text(' -- ${snapshot.data} --', style: TextStyle(fontSize:20)),
-                                SlideCountdownClock(
-                                  duration: Duration(seconds: snapshot.data),
-                                  onDone: () {},
-                                  separator: ':',
-                                )
-                              ],
-                            );
-                    });
-                  },
-                ),
-              ],
-            ),
+            vistaValidacionSincronizacion(_bluetoothBloc, dataCoreBloc),
           ],
         ),
       ),
     );
   }
 
-  // void _showMesssageDialog(String message) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (ctx) {
-  //       return AlertDialog(
-  //         title: Text('Accesos GPS'),
-  //         content: Text(message),
+  Widget vistaValidacionSincronizacion(
+      BluetoothBloc _bluetoothBloc, DataCoreBloc dataCoreBloc) {
+    return StreamBuilder(
+      stream: _bluetoothBloc.deviceStream,
+      builder: (BuildContext context, AsyncSnapshot<BluetoothDevice> snapshot) {
+        var data = snapshot.data;
+        if (data != null) {
+          //here_dash
+          return Container(
+            child: Column(
+              children: [
+                SizedBox(height: 60),
+                Column(
+                  children: [
+                    Text('Índice de radiación UV',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.amber[800])),
+                    SizedBox(height: 5),
+                    StreamBuilder(
+                      stream: _bluetoothBloc.dataIVStream,
+                      initialData: 0.0,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<double> snapshot) {
+                        return Container(
+                          child: Text('${snapshot.data}',
+                              style: TextStyle(fontSize: 20)),
+                        );
+                      },
+                    )
+                  ],
+                ),
+                Divider(),
+                SizedBox(height: 15),
+                Column(
+                  children: [
+                    Text('Tiempo seguro de exposición',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.amber[800])),
+                    StreamBuilder(
+                      stream: _bluetoothBloc.dataTiempoAnteriorStream,
+                      initialData: 0.0,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<double> snapshot) {
+                        double tiempo = snapshot.data;
+                        var t = "--";
+                        if (tiempo.toInt() > 0) {
+                          t = "${tiempo.toInt()} minutos";
+                        }
+                        return Container(
+                          child: Text('${t} ', style: TextStyle(fontSize: 20)),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                Divider(),
+                SizedBox(height: 15),
+                Column(
+                  children: [
+                    Text('Tiempo restante de exposición segura ',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.amber[800])),
+                    StreamBuilder(
+                      stream: _bluetoothBloc.dataTiempoStream,
+                      initialData: 0.0,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<double> snapshot) {
+                        return StatefulBuilder(builder: (context, setState) {
+                          double tiempo = snapshot.data;
 
-  //         actions: [
-  //           FlatButton(
-  //             child: Text('si'),
-  //             onPressed: () {
-  //               Navigator.of(ctx).pop();
-  //             },
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
+                          if (_bluetoothBloc.lastIV == 0) {
+                            return Container(
+                              child:
+                                  Text('Pausa', style: TextStyle(fontSize: 20)),
+                            );
+                          } else {
+                            var t = DateTime.now().millisecondsSinceEpoch +
+                                1000 * 60 * tiempo;
+                            print('+dashh $t');
+
+                            return CountdownTimer(
+                              endTime: t.toInt(),
+                              widgetBuilder: (_, CurrentRemainingTime time) {
+                                if (time == null) {
+                                  return Text('00:00:00',
+                                      style: TextStyle(fontSize: 20));
+                                }
+                                var dia = "";
+                                if (time.days != null) {
+                                  dia = "${time.days} dias";
+                                }
+                                String hora = "00";
+                                if (time.hours != null) {
+                                  hora = "${time.hours}";
+                                }
+                                print(
+                                    "raaaa dia $dia - hora $hora - min ${time.min} - sec ${time.sec}");
+                                if (dia == "" &&
+                                    hora == "00" &&
+                                    time.min == 20 &&
+                                    time.sec == 0) {
+                                  //llamar serviciod
+                                  _bluetoothBloc.sendAlertaTiempo("20");
+                                }
+
+                                if (dia == "" &&
+                                    hora == "00" &&
+                                    time.min == 0 &&
+                                    time.sec == 0) {
+                                  print("raaaa IF");
+                                  //llamar servicio
+                                  _bluetoothBloc.sendAlertaTiempo("0");
+                                }
+                                return Text(
+                                  '${dia}  ${hora} : ${time.min} : ${time.sec} ',
+                                  style: TextStyle(fontSize: 20),
+                                );
+                              },
+                            );
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Center(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                SizedBox(height: 85),
+                Text('Primero debe sincronizar un wearable'),
+                MaterialButton(
+                    child: Text(
+                      'Sincronizar',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    color: Colors.amber[800],
+                    shape: StadiumBorder(),
+                    elevation: 1,
+                    onPressed: () async {
+                      Navigator.pushNamed(context, 'bluetooth');
+                    })
+              ]));
+        }
+      },
+    );
+  }
+
+  Widget _showMesssageDialog(BuildContext context, String message) {
+    return AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(height: 20),
+          Container(
+            child: Text(message, textAlign: TextAlign.center),
+          ),
+          SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+            FlatButton(
+              child:
+                  Text('Aceptar', style: TextStyle(color: Colors.amber[800])),
+              onPressed: () async {
+                final status = await Permission.location.request();
+                accesoGPS(status);
+                Navigator.popAndPushNamed(context, 'home');
+              },
+            ),
+          ])
+        ],
+      ),
+    );
+  }
+
+  void accesoGPS(PermissionStatus status) {
+    switch (status) {
+      case PermissionStatus.granted:
+        // navegar
+        break;
+      case PermissionStatus.denied:
+      case PermissionStatus.restricted:
+      case PermissionStatus.permanentlyDenied:
+        gpsPermition.openAppSettings();
+        break;
+      case PermissionStatus.undetermined:
+        break;
+      case PermissionStatus.limited:
+        break;
+    }
+  }
 }
 
 // Widget _vistaHome(DataCoreBloc dataCoreBloc) {

@@ -2,20 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:suncare/src/bloc/paciente_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/mensaje_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuMensajeUsuario extends StatelessWidget {
   PacienteBloc _pacienteBloc;
+  ConnectivityProvider _connectivityProvider;  
 
   @override
   Widget build(BuildContext context) {
     _pacienteBloc = Provider.of_PacienteBloc(context);
+    _connectivityProvider = ConnectivityProvider.instance;
     _pacienteBloc.buscarMensajes();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+        backgroundColor: Colors.amber,
         title: Text('Recomendaciones'),
       ),
-      body: _listaMensaje(context),
+      body: Stack(
+        children:[
+          _listaMensaje(context),
+          StreamBuilder(
+            stream: _connectivityProvider.connectivityStream ,
+            initialData: true,
+            builder: (BuildContext context, AsyncSnapshot snapshot){
+              var isConnected = snapshot.data;
+              if(isConnected != null){
+                _connectivityProvider.setShowError(isConnected);
+              }
+              return utils.mostrarInternetConexionWithStream(_connectivityProvider);
+            },
+          ), 
+        ]
+      )
     );
   }
 

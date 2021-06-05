@@ -9,7 +9,8 @@ import 'package:suncare/src/preferencias/preferencias_usuario.dart';
 class UsuarioProvider {
   final String _firebaseToken = 'AIzaSyDCDC0_ksQfnbw3FBghH0F8r1DKwFmeVh4';
   final PreferenciasUsuario _preferencia = new PreferenciasUsuario();
-  final String urlCorreo = 'https://weuvapp.herokuapp.com/api/enviarcorreo/correo/';
+  final String urlCorreo =
+      'https://suncare-api.herokuapp.com/api/enviarcorreo/correo/';
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final authData = {
@@ -99,16 +100,13 @@ class UsuarioProvider {
 
   Future enviarVerificacionPorCorreo(String correo) async {
     final asunto = "Solicitud de registro en SunCare App";
-    final mensaje = "¡Saludos!<br>Gracias por enviar una solicitud de registro, esta será evaluada en los próximos días. Queda atento(a) a nuestra respuesta.<br>Atentamente,<br>Equipo de Gestión de accesos de SunCare.";
+    final mensaje =
+        "¡Saludos!<br>Gracias por enviar una solicitud de registro, esta será evaluada en los próximos días. Queda atento(a) a nuestra respuesta.<br>Atentamente,<br>Equipo de Gestión de accesos de SunCare.";
 
-    final data = {
-      "correo": correo,
-      "asunto": asunto,
-      "mensaje": mensaje
-    };
+    final data = {"correo": correo, "asunto": asunto, "mensaje": mensaje};
 
     final response = await http.post(urlCorreo, body: data);
-     Map<String, dynamic> decodeRespuesta = json.decode(response.body);
+    Map<String, dynamic> decodeRespuesta = json.decode(response.body);
     print(decodeRespuesta);
   }
 
@@ -140,8 +138,27 @@ class UsuarioProvider {
     return respuesta;
   }
 
+  Future<String> getNombreUser(String id, String tipo) async {
+    CollectionReference usuarios;
+    String nombreCompleto = "";
+    if (tipo == 'paciente') {
+      usuarios = await FirebaseFirestore.instance.collection("usuarios");
+    } else {
+      usuarios = await FirebaseFirestore.instance.collection("dermatologos");
+    }
+    await usuarios
+        .doc(id)
+        .get()
+        .then((value) => {nombreCompleto = value['nombre']});
+
+    return nombreCompleto;
+  }
+
   Future<String> dermatogoloEsAceptado(String id) async {
-    var dermatologo = await FirebaseFirestore.instance.collection('dermatologos').doc(id).get();
+    var dermatologo = await FirebaseFirestore.instance
+        .collection('dermatologos')
+        .doc(id)
+        .get();
     print('datos del derma a verificar estadoSolicitud: ${dermatologo.data()}');
     var estado = dermatologo['solicitudes']['estadoSolicitud'];
     print('estadoSolicitud del derma-> $estado');

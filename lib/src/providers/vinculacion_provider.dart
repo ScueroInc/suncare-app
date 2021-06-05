@@ -57,16 +57,13 @@ class VinculacionProvider {
     var idNombre = _preferencia.userNombreDB;
     bool respuesta = false;
     var idMedicoEncontrado = '';
-    await dermatologos.get().then((query) {
-      query.docs.forEach((element) {
-        print(element.data());
-        if (element["codigo"] == codigoMedico) {
-          print('encontrado');
-          idMedicoEncontrado = element['id'];
-          return element;
-        }
-      });
-    });
+    await dermatologos.where("codigo", isEqualTo: codigoMedico)
+                        .get().then((value) => {
+                          value.docs.forEach((element) {
+                            idMedicoEncontrado = element["id"];
+                          })
+                        });
+   
     if (idMedicoEncontrado == '') return false;
 
     final Map<String, dynamic> data = Map<String, dynamic>();

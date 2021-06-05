@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:suncare/src/bloc/data_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
+import 'package:suncare/src/models/dermatologo_model.dart';
+import 'package:suncare/src/models/paciente_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
 
 class LoadingPage extends StatefulWidget {
@@ -72,25 +75,57 @@ class _LoadingPageState extends State<LoadingPage> {
     );
   }
 
-  void _validarTipoUsuario() {
-    Timer(Duration(seconds: 2), () {
+  void _validarTipoUsuario() async {
+    Timer(Duration(seconds: 2), () async {
       if (_preferencia.userTipoDB == "paciente") {
-        if (primeraVez == false) {
-          print('completar paciente');
-          Navigator.pushReplacementNamed(context, 'perfil');
-        } else {
+        // if (primeraVez == false) {
+        //   print('completar paciente');
+        //   Navigator.pushReplacementNamed(context, 'perfil');
+        // } else {
+        //   Navigator.pushReplacementNamed(context, 'home');
+        // }
+        bool resUser = await consultarPrimeraVezUsuario();
+        if (resUser == true) {
           Navigator.pushReplacementNamed(context, 'home');
+        } else {
+          Navigator.pushReplacementNamed(context, 'perfil');
         }
       } else if (_preferencia.userTipoDB == "dermatologo") {
-        if (primeraVez == false) {
-          print('completar dermatologo');
-          Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
-        } else {
+        // if (primeraVez == false) {
+        //   print('completar dermatologo');
+        //   Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
+        // } else {
+        //   Navigator.pushReplacementNamed(context, 'home_dermatologo');
+        // }
+        bool resDerm = await consultarPrimeraVezDermatologo();
+        if (resDerm == true) {
           Navigator.pushReplacementNamed(context, 'home_dermatologo');
+        } else {
+          Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
         }
       } else {
         Navigator.pushReplacementNamed(context, 'login');
       }
     });
+  }
+
+  Future<bool> consultarPrimeraVezUsuario() async {
+    final CollectionReference pacientes =
+        FirebaseFirestore.instance.collection('usuarios');
+    var id = _preferencia.userIdDB;
+    var snapshot = await pacientes.doc(id).get();
+    var user = PacienteModel.fromJson(snapshot.data());
+
+    return user.first;
+  }
+
+  Future<bool> consultarPrimeraVezDermatologo() async {
+    final CollectionReference dermatologos =
+        FirebaseFirestore.instance.collection('dermatologos');
+    var id = _preferencia.userIdDB;
+    var snapshot = await dermatologos.doc(id).get();
+    var derm = DermatologoModel.fromJson(snapshot.data());
+
+    return derm.first;
   }
 }

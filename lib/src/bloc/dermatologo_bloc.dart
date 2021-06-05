@@ -1,14 +1,18 @@
 import 'dart:io';
 
+import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:suncare/src/bloc/validators.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/models/mensaje_model.dart';
 import 'package:suncare/src/models/paciente_model.dart';
 import 'package:suncare/src/models/solicitud_model.dart';
+import 'package:suncare/src/preferencias/preferencias_usuario.dart';
 import 'package:suncare/src/providers/dermatologo_provider.dart';
 import 'package:suncare/src/models/solicitud_validacion_model.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:suncare/src/widgets/tab_statistic.dart';
 
 class DermatologoBloc with Validators {
   final _dermatologosController = BehaviorSubject<List<DermatologoModel>>();
@@ -46,16 +50,32 @@ class DermatologoBloc with Validators {
 
   Stream<bool> get formValidStream => CombineLatestStream.combine3(
       nameStream, lastNameStream, emailStream, (n, l, e) => true);
+
+  final _listaReporteSemanalController =
+      BehaviorSubject<List<charts.Series<OrdinalSales, String>>>();
+
+  Stream<List<charts.Series<OrdinalSales, String>>>
+      get listaReporteSemanalStream => _listaReporteSemanalController.stream;
   //Insertar Data
-  Future crearDermatologo(DermatologoModel dermatologo, SolicitudValidacionModel solicitudValidacion) async {
+  Future crearDermatologo(DermatologoModel dermatologo,
+      SolicitudValidacionModel solicitudValidacion) async {
     _cargandoController.sink.add(true);
-    final respuestaCrearDermatologo =
-        await _dermatologoProvider.crearDermatologo(dermatologo, solicitudValidacion);
+    final respuestaCrearDermatologo = await _dermatologoProvider
+        .crearDermatologo(dermatologo, solicitudValidacion);
 
     (respuestaCrearDermatologo)
         ? print('crearDermatologo: TRUE')
         : print('crearDermatologo: FALSE');
     _cargandoController.sink.add(false);
+  }
+
+  Future<String> dataTipoPielFuture(String id) async {
+    // var f =_bluetoothProvider.dataEstadisticaFecha();
+    // OrdinalSales data = await _bluetoothProvider.dataEstadisticaFecha2(fecha);
+    // print('kinkin 1 $fecha ${data.valor}');
+    var xtipoPiel = await _dermatologoProvider.dataTipoPielFuture(id);
+    print('datata 0 ${xtipoPiel}');
+    return xtipoPiel;
   }
 
   void buscarDermatologo(String id) async {
@@ -117,11 +137,56 @@ class DermatologoBloc with Validators {
     print('crearMensaje: $respuesta');
     return respuesta;
   }
+
   Future<Map<String, dynamic>> postNotificacion(String idUsuario) async {
-    final respuesta =
-        await _dermatologoProvider.postNotificacion(idUsuario);
+    final respuesta = await _dermatologoProvider.postNotificacion(idUsuario);
     print('respeusta del fm bloc-> $respuesta');
     return respuesta;
+  }
+
+  Future<OrdinalSales> dataEstadisticaFecha(
+      DateTime fecha, String idUser) async {
+    // var f =_bluetoothProvider.dataEstadisticaFecha();
+    OrdinalSales data =
+        await _dermatologoProvider.dataEstadisticaFecha2(fecha, idUser);
+    print('kinkin 1 $fecha ${data.valor}');
+    return data;
+  }
+
+  void insertarDataInitSemanal(DateTime fecha, String idUser) async {
+    List<charts.Series<OrdinalSales, String>> listDataSemanal = [];
+    // bool val = false;
+    // var d1 = await dataEstadisticaFecha(dia, mes, anio);
+    // for (var i = 1; i <= 7; i++) {
+    print("kinkin $fecha");
+    // }
+    var d6 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 6), idUser);
+    var d5 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 5), idUser);
+    var d4 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 4), idUser);
+    var d3 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 3), idUser);
+    var d2 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 2), idUser);
+    var d1 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 1), idUser);
+    var d0 = await dataEstadisticaFecha(
+        new DateTime(fecha.year, fecha.month, fecha.day - 0), idUser);
+
+    var data = [d6, d5, d4, d3, d2, d1, d0];
+
+    var dataSemanal = new charts.Series<OrdinalSales, String>(
+        id: 'Sales',
+        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        domainFn: (OrdinalSales sales, _) => sales.texto,
+        measureFn: (OrdinalSales sales, _) => sales.valor,
+        data: data,
+        labelAccessorFn: (OrdinalSales sales, _) =>
+            '${sales.label.toString()}');
+    listDataSemanal.add(dataSemanal);
+    _listaReporteSemanalController.sink.add(listDataSemanal);
   }
 
   Function(String) get changeEmail => _emailController.sink.add;
@@ -142,5 +207,7 @@ class DermatologoBloc with Validators {
     _emailController?.close();
     _nameController?.close();
     _lastNameController?.close();
+
+    _listaReporteSemanalController?.close();
   }
 }

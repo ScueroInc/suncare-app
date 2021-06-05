@@ -29,13 +29,6 @@ _listaOpciones(BuildContext context) {
           // dataCoreBloc.insertarTiempoMaximo(30);
         },
       ),
-      ListTile(
-        title: Text('Cerrar Sesión'),
-        onTap: () {
-          // dataCoreBloc.insertarTiempoMaximo(30);
-          Navigator.pushNamedAndRemoveUntil(context, 'login', (route) => false);
-        },
-      ),
     ],
   );
 }

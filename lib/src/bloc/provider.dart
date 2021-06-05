@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:suncare/src/bloc/bluetooth_bloc.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/data_bloc.dart';
+import 'package:suncare/src/bloc/datos_estadisticos.dart';
 import 'package:suncare/src/bloc/dermatologo_bloc.dart';
 import 'package:suncare/src/bloc/login_bloc.dart';
 import 'package:suncare/src/bloc/mensaje_bloc.dart';
@@ -27,6 +29,8 @@ class Provider extends InheritedWidget {
   final _vinculacionBloc = VinculacionBloc();
   final validarCmpBloc = ValidarCmpBloc();
   final mensajesBloc = MensajesBloc();
+  final estadisticosBloc = EstadisticosBloc();
+  final _connectivityBloc = ConnectivityBloc();
 
   factory Provider({Key key, Widget child}) {
     if (_instancia == null) {
@@ -99,5 +103,17 @@ class Provider extends InheritedWidget {
     return context
         .dependOnInheritedWidgetOfExactType<Provider>()
         ._vinculacionBloc;
+  }
+
+  static EstadisticosBloc of_EstadisticosBloc(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<Provider>()
+        .estadisticosBloc;
+  }
+
+  static ConnectivityBloc of_ConnectivityBloc(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<Provider>()
+        ._connectivityBloc;
   }
 }

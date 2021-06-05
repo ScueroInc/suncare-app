@@ -39,7 +39,7 @@ class RegistrarDermatologoBloc with Validators {
       lastNameStream,
       formValidImage,
       (e, p, c, n, l, f) => true);
-  Stream<bool> get formValidStreamWithPhoto => CombineLatestStream.combine8(
+  Stream<bool> get formValidStreamWithPhoto => CombineLatestStream.combine7(
       emailStream,
       passwordStream,
       cmpStream,
@@ -47,8 +47,7 @@ class RegistrarDermatologoBloc with Validators {
       lastNameStream,
       imagenPerfilStream,
       imagenDniStream,
-      formValidImage,
-      (e, p, c, n, l,i,d, f) => true);
+      (e, p, c, n, l,i,d) => true);
 
   Function(String) get changeEmail => _emailController.sink.add;
   Function(String) get changePassword => _passwordController.sink.add;

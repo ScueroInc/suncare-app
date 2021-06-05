@@ -1,10 +1,14 @@
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/dermatologo_bloc.dart';
 import 'package:suncare/src/bloc/mensaje_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/mensaje_model.dart';
 import 'package:suncare/src/models/paciente_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MensajeDermatologo extends StatefulWidget {
   @override
@@ -14,6 +18,7 @@ class MensajeDermatologo extends StatefulWidget {
 class _MensajeDermatologoState extends State<MensajeDermatologo> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  ConnectivityBloc _connectivityBloc;
   MensajesBloc _mensajesBloc;
 
   DermatologoBloc dermatologoBloc;
@@ -25,6 +30,8 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
   String miMensaje = '';
   bool show;
 
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
+
   @override
   void initState() {
     show = true;
@@ -34,6 +41,8 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
   @override
   Widget build(BuildContext context) {
     dermatologoBloc = Provider.of_DermatologoBloc(context);
+
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     // dermatologoBloc.listarMensajePorUsuario("2aJfwxkXSafcgPEnSvvaR4UX7073");
     _mensajesBloc = Provider.of_MensajeBloc(context);
 
@@ -42,18 +51,11 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
     dermatologoBloc.listarMensajePorUsuario(idUsuario);
     print('** $idUsuario');
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      key: scaffoldKey,
-      appBar: AppBar(
-          backgroundColor: Color.fromRGBO(143, 148, 251, 6),
-          title: Text('Mensaje de pacientes')),
-      body: SingleChildScrollView(
-        child: Column(
-          children:[_listaMensaje(context, _mensajesBloc),]
-        ),
-      ),
-      
-    );
+        resizeToAvoidBottomInset: false,
+        key: scaffoldKey,
+        appBar: AppBar(
+            backgroundColor: Colors.amber, title: Text('Mensaje de pacientes')),
+        body: _listaMensaje(context, _mensajesBloc));
   }
 
   _listaMensaje(BuildContext context, MensajesBloc bloc) {
@@ -75,6 +77,18 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
                 }
               },
             ),
+      StreamBuilder(
+        stream: _connectivityProvider.connectivityStream,
+        initialData: true,
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          var isConnected = snapshot.data;
+          print('raaaa ${isConnected}');
+          if (isConnected != null) {
+            _connectivityProvider.setShowError(isConnected);
+          }
+          return utils.mostrarInternetConexionWithStream(_connectivityProvider);
+        },
+      ),
     ]);
   }
 
@@ -102,11 +116,12 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Container(
-            height: 160,
+            height: 130,
             child: TextFormField(
               initialValue: miMensaje,
               minLines: 5,
               keyboardType: TextInputType.multiline,
+              maxLength: 200,
               maxLines: null,
               decoration: InputDecoration(
                 icon: Icon(Icons.mail),
@@ -121,27 +136,27 @@ class _MensajeDermatologoState extends State<MensajeDermatologo> {
             children: [
               FlatButton(
                   child: Text('Cancelar',
-                      style:
-                          TextStyle(color: Color.fromRGBO(143, 148, 251, 6))),
+                      style: TextStyle(color: Colors.amber[800])),
                   onPressed: () => setState(() {
                         show = false;
                       })),
               FlatButton(
                   child: Text('Enviar',
-                      style:
-                          TextStyle(color: Color.fromRGBO(143, 148, 251, 6))),
+                      style: TextStyle(color: Colors.amber[800])),
                   onPressed: () async {
-                    bool respuesta = await dermatologoBloc.crearMensaje(
-                        idUsuario, miMensaje);
-                        await dermatologoBloc.postNotificacion(idUsuario);
-                    (respuesta)
-                        ? mostrarSnackBar(
-                            Icons.thumb_up, 'Mensaje enviado', Colors.blue)
-                        : mostrarSnackBar(
-                            Icons.error, 'Ocurrió un error', Colors.red);
-                    setState(() {
-                      show = false;
-                    });
+                    if (_connectivityBloc.conectividad == true) {
+                      bool respuesta = await dermatologoBloc.crearMensaje(
+                          idUsuario, miMensaje);
+                      await dermatologoBloc.postNotificacion(idUsuario);
+                      (respuesta)
+                          ? mostrarSnackBar(
+                              Icons.thumb_up, 'Mensaje enviado', Colors.amber)
+                          : mostrarSnackBar(
+                              Icons.error, 'Ocurrió un error', Colors.red);
+                      setState(() {
+                        show = false;
+                      });
+                    } else {}
                   })
             ],
           )

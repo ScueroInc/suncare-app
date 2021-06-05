@@ -1,24 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/paciente_model.dart';
 import 'package:suncare/src/models/solicitud_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class SolicitudPendientePage extends StatelessWidget {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final String notImage =
       'https://static.wikia.nocookie.net/adventuretimewithfinnandjake/images/1/17/Evicted_Bee.png/revision/latest?cb=20120711195105';
   DermatologoBloc dermatologoBloc;
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
+  ConnectivityBloc _connectivityBloc;
 
   @override
   Widget build(BuildContext context) {
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     dermatologoBloc = Provider.of_DermatologoBloc(context);
     dermatologoBloc.listarSolicitudes();
-
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+        backgroundColor: Colors.amber,
         centerTitle: true,
         title: Text('Solicitudes de vinculación'),
         leading: IconButton(
@@ -27,9 +34,25 @@ class SolicitudPendientePage extends StatelessWidget {
               Navigator.pushNamed(context, 'home_dermatologo');
             }),
       ),
-      body: Container(
-        child: _crearListado(),
-      ),
+      body: Stack(children: [
+        // Text('s'),
+        Container(
+          child: _crearListado(),
+        ),
+        StreamBuilder(
+          stream: _connectivityBloc.connectivityStream,
+          initialData: true,
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            var isConnected = snapshot.data;
+            print('raaaaaaaa ${isConnected}');
+            if (isConnected != null) {
+              _connectivityProvider.setShowError(isConnected);
+            }
+            return utils.mostrarInternetConexionAnimatedWithStream(
+                _connectivityProvider);
+          },
+        ),
+      ]),
     );
   }
 
@@ -102,9 +125,9 @@ class SolicitudPendientePage extends StatelessWidget {
                           await dermatologoBloc.aceptarSolicitud(solictud);
                       if (respuesta == true) {
                         mostrarSnackBar(Icons.thumb_up,
-                            'Paciente vinculado con éxito', Color.fromRGBO(143, 148, 251, 6));
-                        Navigator.of(context).pop();
+                            'Paciente vinculado con éxito', Colors.amber);
                         dermatologoBloc.listarSolicitudes();
+                        Navigator.popAndPushNamed(context, 'home_dermatologo');
                       } else {
                         mostrarSnackBar(
                             Icons.error, 'Ocurrio un error', Colors.red);
@@ -123,7 +146,7 @@ class SolicitudPendientePage extends StatelessWidget {
                       if (respuesta == true) {
                         Navigator.of(context).pop();
                         mostrarSnackBar(Icons.thumb_up,
-                            'Paciente vinculado con éxito', Colors.blue);
+                            'Paciente vinculado con éxito', Colors.amber);
                         dermatologoBloc.listarSolicitudes();
                       } else {
                         Navigator.of(context).pop();
@@ -147,37 +170,35 @@ class SolicitudPendientePage extends StatelessWidget {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('Solicitud'),
-            content: Column(mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
               Container(
                 height: 60,
                 child:
                     Text('¿Desea aceptar la solicitud de ${solicitud.nombre}?'),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround, 
-                children: [
-                  TextButton(
-                      child: Text('No',style: TextStyle(color: Color.fromRGBO(143, 148, 251, 6))),
-                      onPressed: () => Navigator.of(context).pop()),
-                  TextButton(
-                      child: Text('Sí',style: TextStyle(color: Color.fromRGBO(143, 148, 251, 6))),
-                      onPressed: () async {
-                        bool respuesta =
-                            await dermatologoBloc.aceptarSolicitud(solicitud);
-                        if (respuesta == true) {
-                          Navigator.of(context).pop();
-                          mostrarSnackBar(Icons.thumb_up,
-                              'Paciente vinculado con éxito', Colors.blue);
-                          dermatologoBloc.listarSolicitudes();
-                        } else {
-                          Navigator.of(context).pop();
-                          mostrarSnackBar(
-                              Icons.error, 'Ocurrio un error', Colors.red);
-                        }
-                      }),
-                ]
-              )
+              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                TextButton(
+                    child:
+                        Text('No', style: TextStyle(color: Colors.amber[800])),
+                    onPressed: () => Navigator.of(context).pop()),
+                TextButton(
+                    child:
+                        Text('Sí', style: TextStyle(color: Colors.amber[800])),
+                    onPressed: () async {
+                      bool respuesta =
+                          await dermatologoBloc.aceptarSolicitud(solicitud);
+                      if (respuesta == true) {
+                        Navigator.of(context).pop();
+                        mostrarSnackBar(Icons.thumb_up,
+                            'Paciente vinculado con éxito', Colors.amber);
+                        dermatologoBloc.listarSolicitudes();
+                      } else {
+                        Navigator.of(context).pop();
+                        mostrarSnackBar(
+                            Icons.error, 'Ocurrio un error', Colors.red);
+                      }
+                    }),
+              ])
             ]),
           );
         });
@@ -208,7 +229,7 @@ class SolicitudPendientePage extends StatelessWidget {
                     if (respuesta == true) {
                       Navigator.of(context).pop();
                       mostrarSnackBar(Icons.thumb_up,
-                          'Solicitud cancelada correctamente', Colors.blue);
+                          'Solicitud cancelada correctamente', Colors.amber);
                       dermatologoBloc.listarSolicitudes();
                     } else {
                       Navigator.of(context).pop();

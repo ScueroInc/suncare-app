@@ -1,11 +1,15 @@
 import 'dart:io';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/models/paciente_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
+import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuEditPage extends StatefulWidget {
   @override
@@ -13,6 +17,7 @@ class MenuEditPage extends StatefulWidget {
 }
 
 class _MenuEditPageState extends State<MenuEditPage> {
+  ConnectivityBloc _connectivityBloc;
   final PreferenciasUsuario _preferencia = new PreferenciasUsuario();
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final formKey = GlobalKey<FormState>();
@@ -32,19 +37,22 @@ class _MenuEditPageState extends State<MenuEditPage> {
     "Tipo V",
     "Tipo VI",
   ];
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
 
   @override
   Widget build(BuildContext context) {
     final PreferenciasUsuario _preferencia = new PreferenciasUsuario();
 
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     final idUser = _preferencia.userIdDB;
 
     pacienteBloc = Provider.of_PacienteBloc(context);
     pacienteBloc.buscarPaciente(idUser);
+
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(143, 148, 251, 6),
+        backgroundColor: Colors.amber,
         title: Text('Modificar perfil'),
         leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -54,54 +62,63 @@ class _MenuEditPageState extends State<MenuEditPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.photo_size_select_actual),
-            onPressed: _seleccionarFoto,
+            onPressed: () {
+              _seleccionarFoto(pacienteBloc);
+            },
           ),
           IconButton(
-            icon: Icon(Icons.camera_alt),
-            onPressed: _tomarFoto,
-          ),
+              icon: Icon(Icons.camera_alt),
+              onPressed: () {
+                _tomarFoto(pacienteBloc);
+              }),
         ],
       ),
       body: SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.only(left: 16, top: 25, right: 16),
-          child: StreamBuilder(
-            stream: pacienteBloc.pacienteBuscadoStream,
-            builder:
-                (BuildContext context, AsyncSnapshot<PacienteModel> snapshot) {
-              print('-------0 ${snapshot.data}');
-              if (snapshot.hasData) {
-                // PacienteModel paciente = snapshot.data;
-                print('-------0 ${snapshot.data.tipoPiel}');
-                paciente = snapshot.data;
-                // if (paciente.tipoPiel != null) {
-                //   _tipoDePiel = paciente.tipoPiel;
-                // }
-                print(_preferencia.token);
-                return Form(
-                  key: formKey,
-                  child: Column(
-                    children: <Widget>[
-                      _mostrarFoto(),
-                      _mostrarNombre(pacienteBloc),
-                      _mostrarApellido(pacienteBloc),
-                      _mostrarCorreo(pacienteBloc),
-                      // _crearFecha(context),
-                      _mostrarNacimiento(),
-                      _mostrarTipoPiel(),
-                      // Text('${_preferencia.token}'),
-                      
-                      SizedBox(height: 20),
-                      _mostrarAcciones(pacienteBloc),
-                      // _suspenderCuenta()
-                    ],
-                  ),
-                );
-              } else {
-                return Center(child: CircularProgressIndicator());
-              }
-            },
-          ),
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.only(left: 16, top: 25, right: 16),
+              child: StreamBuilder(
+                stream: pacienteBloc.pacienteBuscadoStream,
+                builder: (BuildContext context,
+                    AsyncSnapshot<PacienteModel> snapshot) {
+                  print('-------0 ${snapshot.data}');
+                  if (snapshot.hasData) {
+                    // PacienteModel paciente = snapshot.data;
+                    print('-------0 ${snapshot.data.tipoPiel}');
+                    paciente = snapshot.data;
+                    // if (paciente.tipoPiel != null) {
+                    //   _tipoDePiel = paciente.tipoPiel;
+                    // }
+                    print(_preferencia.token);
+                    return Form(
+                      key: formKey,
+                      child: Column(
+                        children: <Widget>[
+                          _mostrarFoto(pacienteBloc),
+                          _mostrarNombre(pacienteBloc),
+                          _mostrarApellido(pacienteBloc),
+                          _mostrarCorreo(pacienteBloc),
+                          // _crearFecha(context),
+                          _mostrarNacimiento(),
+                          _mostrarTipoPiel(pacienteBloc),
+                          // Text('${_preferencia.token}'),
+
+                          SizedBox(height: 20),
+                          _mostrarAcciones(pacienteBloc),
+                          // _suspenderCuenta()
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
+            ),
+            // utils.mostrarInternetConexionWithStream(_connectivityProvider)
+            utils.nostrarInternetErrorStream(_connectivityBloc),
+          ],
         ),
       ),
     );
@@ -118,6 +135,10 @@ class _MenuEditPageState extends State<MenuEditPage> {
       initialData: bloc.changeName(paciente.nombre),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: paciente.nombre,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
@@ -144,9 +165,13 @@ class _MenuEditPageState extends State<MenuEditPage> {
       initialData: bloc.changeLastName(paciente.apellido),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: paciente.apellido,
           decoration: InputDecoration(
-            labelText: 'Apellido',
+            labelText: 'Apellidos',
             errorText: snapshot.error,
           ),
           onSaved: (value) => paciente.apellido = value,
@@ -238,60 +263,68 @@ class _MenuEditPageState extends State<MenuEditPage> {
     print('la fecha es ${paciente.nacimiento}');
   }
 
-  Widget _mostrarTipoPiel() {
+  Widget _mostrarTipoPiel(PacienteBloc bloc) {
     if (tipoPielChange != null) {
       paciente.tipoPiel = tipoPielChange;
     }
-    return DropdownButton(
-        hint: Text('Seleccione su tipo de piel'),
-        dropdownColor: Colors.white,
-        underline: SizedBox(),
-        style: TextStyle(color: Colors.black),
-        isExpanded: true,
-        value: paciente.tipoPiel,
-        onChanged: (newvalue) {
-          // print(' lili   $value');
-          setState(() {
-            _tipoDePiel = newvalue;
-            tipoPielChange = _tipoDePiel;
-            // print(' lili2   $_tipoDePiel');
-          });
-        },
-        items: _itemsData.map((element) {
-          return DropdownMenuItem(
-            value: element,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(element),
-                Row(
-                  children: [
-                    Container(
-                      width: 18,
-                      height: 18,
-                      color: _tipoColorPiel(element, 1),
-                    ),
-                    Container(
-                      width: 18,
-                      height: 18,
-                      color: _tipoColorPiel(element, 2),
-                    ),
-                    Container(
-                      width: 18,
-                      height: 18,
-                      color: _tipoColorPiel(element, 3),
-                    ),
-                    Container(
-                      width: 18,
-                      height: 18,
-                      color: _tipoColorPiel(element, 4),
-                    )
-                  ],
-                ),
-              ],
-            ),
-          );
-        }).toList());
+    if (paciente.tipoPiel != null) {
+      bloc.changeTipoPiel(tipoPielChange);
+    }
+    return StreamBuilder(
+        stream: bloc.tipoPielStream,
+        builder: (context, snapshot) {
+          return DropdownButton(
+              hint: Text('Seleccione su tipo de piel'),
+              dropdownColor: Colors.white,
+              underline: SizedBox(),
+              style: TextStyle(color: Colors.black),
+              isExpanded: true,
+              value: paciente.tipoPiel,
+              onChanged: (newvalue) {
+                // print(' lili   $value');
+                setState(() {
+                  _tipoDePiel = newvalue;
+                  tipoPielChange = _tipoDePiel;
+                  // print(' lili2   $_tipoDePiel');
+                });
+                bloc.changeTipoPiel(tipoPielChange);
+              },
+              items: _itemsData.map((element) {
+                return DropdownMenuItem(
+                  value: element,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(element),
+                      Row(
+                        children: [
+                          Container(
+                            width: 18,
+                            height: 18,
+                            color: _tipoColorPiel(element, 1),
+                          ),
+                          Container(
+                            width: 18,
+                            height: 18,
+                            color: _tipoColorPiel(element, 2),
+                          ),
+                          Container(
+                            width: 18,
+                            height: 18,
+                            color: _tipoColorPiel(element, 3),
+                          ),
+                          Container(
+                            width: 18,
+                            height: 18,
+                            color: _tipoColorPiel(element, 4),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList());
+        });
   }
 
   Color _tipoColorPiel(String tipo, int tono) {
@@ -375,78 +408,110 @@ class _MenuEditPageState extends State<MenuEditPage> {
       children: [
         StreamBuilder(
           stream: bloc.formValidStream,
-          builder: (BuildContext ctx, AsyncSnapshot snapshot) {
-            return RaisedButton(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
-                child: Text(
-                  'Guardar',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              color: Color.fromRGBO(143, 148, 251, 1),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              onPressed: snapshot.hasData
-                  ? () {
-                      mostrarSnackBar(
-                        Icons.thumb_up,
-                        'Cambios guardados con éxito',
-                        Color.fromRGBO(143, 148, 251, 6),
-                      );
-
-                      _submit(context);
+          builder: (BuildContext ctx, AsyncSnapshot snapshotform) {
+            return StreamBuilder(
+                stream: _connectivityProvider.connectivityStream,
+                initialData: true,
+                builder: (context, snapshot) {
+                  var isConnected = snapshot.data;
+                  if (isConnected != null) {
+                    if (isConnected == true) {
+                      _connectivityProvider.setShowError(true);
                     }
-                  : null,
-            );
+                  }
+                  return RaisedButton(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 80.0, vertical: 15.0),
+                      child: Text(
+                        'Guardar',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    color: Colors.amber[800],
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    onPressed: snapshotform.hasData
+                        ? () {
+                            // if (isConnected != null) {
+                            //   if (isConnected == true) {
+                            // mostrarSnackBar(
+                            //   Icons.thumb_up,
+                            //   'Cambios guardados con éxito',
+                            //   Colors.amber,
+                            // );
+
+                            //     _submit(context);
+                            //   } else {
+                            //     _connectivityProvider.setShowError(false);
+                            //   }
+                            // }
+                            if (_connectivityBloc.conectividad == true) {
+                              mostrarSnackBar(
+                                Icons.thumb_up,
+                                'Cambios guardados con éxito',
+                                Colors.amber,
+                              );
+                              _submit(context);
+                            } else {
+                              _connectivityBloc.setErrorStream(true);
+                              // final snackbar = utils.mySnackBarError();
+                              // scaffoldKey.currentState.showSnackBar(snackbar);
+                            }
+                          }
+                        : null,
+                  );
+                });
           },
         ),
         SizedBox(height: 15),
         _crearCancelar(context),
+        SizedBox(height: 15),
       ],
     );
   }
 
-  Widget _mostrarFoto() {
+  Widget _mostrarFoto(PacienteBloc bloc) {
     return Container(
       color: Colors.amber,
-      child: _fotoVista(),
+      child: _fotoVista(bloc),
     );
   }
 
-  Widget _fotoVista() {
-    if (paciente.imagenProfile != null) {
-      return FadeInImage(
-        placeholder: AssetImage('assets/img/no-image.png'),
-        image: NetworkImage(paciente.imagenProfile),
-        fit: BoxFit.contain,
-        height: 200.0,
-      );
-    } else {
-      return foto == null
-          ? Image(
-              image: AssetImage('assets/img/no-image.png'),
-              height: 200.00,
-              fit: BoxFit.cover,
-            )
-          : Image.file(
-              foto,
-              height: 200.0,
-              fit: BoxFit.cover,
-            );
-    }
+  Widget _fotoVista(PacienteBloc bloc) {
+    return StreamBuilder(
+      stream: pacienteBloc.imagenPerfilStream,
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (snapshot.data == null) {
+          return FadeInImage(
+            placeholder: AssetImage('assets/img/no-image.png'),
+            image: paciente.imagenProfile == null
+                ? NetworkImage('assets/img/no-image.png')
+                : NetworkImage(paciente.imagenProfile),
+            fit: BoxFit.contain,
+            height: 200.0,
+          );
+        } else {
+          return Image.file(
+            snapshot.data,
+            height: 200.0,
+            fit: BoxFit.cover,
+          );
+        }
+      },
+    );
   }
 
-  _tomarFoto() async {
-    _procesarImagen(ImageSource.camera);
+  _tomarFoto(PacienteBloc bloc) async {
+    _procesarImagen(ImageSource.camera, bloc);
   }
 
-  _seleccionarFoto() async {
-    _procesarImagen(ImageSource.gallery);
+  _seleccionarFoto(PacienteBloc bloc) async {
+    _procesarImagen(ImageSource.gallery, bloc);
   }
 
-  _procesarImagen(ImageSource origen) async {
+  _procesarImagen(ImageSource origen, PacienteBloc bloc) async {
     final _picker = ImagePicker();
 
     final pickedFile = await _picker.getImage(
@@ -454,6 +519,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
 
     if (pickedFile != null) {
       foto = File(pickedFile.path);
+      bloc.changeImagenPerfil(foto);
       paciente.imagenProfile = null;
     }
 
@@ -479,7 +545,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
     // paciente.tipoPiel = _tipoDePiel;
     print('* $_tipoDePiel *');
     print('* ${paciente.tipoPiel} *');
-
+    paciente.first = true;
     await pacienteBloc.editarPaciente(paciente);
     print('_submit primeraVez -> ${_preferencia.primeraVez}');
     if (_preferencia.primeraVez == false) {
@@ -520,7 +586,7 @@ class _MenuEditPageState extends State<MenuEditPage> {
     return SizedBox(
       width: 250,
       height: 45,
-      child: RaisedButton(
+      /* child: RaisedButton(
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
           child: Text(
@@ -535,7 +601,21 @@ class _MenuEditPageState extends State<MenuEditPage> {
           // Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
           Navigator.pushReplacementNamed(context, 'perfil');
         },
-      ),
+      ), */
+      child: Container(
+          child: RaisedButton(
+        child: Text(
+          'Cancelar',
+          style: TextStyle(color: Colors.white),
+        ),
+        color: Color.fromRGBO(245, 90, 90, 1),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        onPressed: () {
+          // Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
+          Navigator.pushReplacementNamed(context, 'perfil');
+        },
+      )),
     );
   }
 }

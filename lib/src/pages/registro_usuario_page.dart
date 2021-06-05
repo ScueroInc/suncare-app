@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
 // import 'package:suncare/src/bloc/paciente_bloc.dart';
 import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/bloc/registrar_bloc.dart';
 import 'package:suncare/src/models/paciente_model.dart';
+import 'package:suncare/src/providers/connectivity_provider.dart';
 import 'package:suncare/src/providers/usuario_provider.dart';
 import 'package:suncare/src/utils/utils.dart' as utils;
 import 'package:suncare/src/widgets/headers.dart';
@@ -20,43 +25,54 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
 
   final UsuarioProvider usuarioProvider = new UsuarioProvider();
 
+  ConnectivityBloc _connectivityBloc;
   PacienteBloc pacienteBloc;
   PacienteModel paciente = new PacienteModel();
 
   //controller
   TextEditingController _inputFieldDateController = new TextEditingController();
+  ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
 
   @override
   Widget build(BuildContext context) {
     pacienteBloc = Provider.of_PacienteBloc(context);
 
+    _connectivityBloc = Provider.of_ConnectivityBloc(context);
     return SafeArea(
         child: Scaffold(
             key: scaffoldKey,
-            resizeToAvoidBottomInset: false,
-            body: Container(
-              padding: EdgeInsets.all(15.0),
-              child: _formularioUsuario(context),
-              // child: Stack(
-              //   children: [
-              //     HeaderPico(),
-              //     Column(
-              //       children: [
-              //         Container(
-              //           width: double.infinity,
-              //           height: 200.0,
-              //           child: Text('F'),
-              //         ),
-              //         SingleChildScrollView(
-              //           child: Container(
-              //             padding: EdgeInsets.all(15.0),
-              //             child: _formularioUsuario(context),
-              //           ),
-              //         ),
-              //       ],
-              //     )
-              //   ],
-              // ),
+            resizeToAvoidBottomInset: true,
+            body: SingleChildScrollView(
+              child: Stack(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(15.0),
+                    child: _formularioUsuario(context),
+                    // child: Stack(
+                    //   children: [
+                    //     HeaderPico(),
+                    //     Column(
+                    //       children: [
+                    //         Container(
+                    //           width: double.infinity,
+                    //           height: 200.0,
+                    //           child: Text('F'),
+                    //         ),
+                    //         SingleChildScrollView(
+                    //           child: Container(
+                    //             padding: EdgeInsets.all(15.0),
+                    //             child: _formularioUsuario(context),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     )
+                    //   ],
+                    // ),
+                  ),
+                  // utils.mostrarInternetConexionWithStream(_connectivityProvider)
+                  utils.nostrarInternetErrorStream(_connectivityBloc)
+                ],
+              ),
             )));
   }
 
@@ -89,9 +105,8 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
   }
 
   Widget _titlePage() {
-    return Text('Crear Cuenta',
-        style:
-            TextStyle(fontSize: 28.0, color: Color.fromRGBO(143, 148, 251, 1)));
+    return Text('Crear cuenta',
+        style: TextStyle(fontSize: 28.0, color: Colors.amber));
   }
 
   Widget _crearNombre(RegistrarBloc bloc) {
@@ -99,6 +114,10 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
       stream: bloc.nameStream,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         return TextFormField(
+          maxLength: 30,
+          buildCounter: (BuildContext context,
+                  {int currentLength, int maxLength, bool isFocused}) =>
+              null,
           initialValue: paciente.nombre,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
@@ -129,6 +148,10 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
         stream: bloc.lastNameStream,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           return TextFormField(
+            maxLength: 30,
+            buildCounter: (BuildContext context,
+                    {int currentLength, int maxLength, bool isFocused}) =>
+                null,
             initialValue: paciente.apellido,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
@@ -209,7 +232,7 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
     DateTime picked = await showDatePicker(
         context: context,
         initialDate: new DateTime.now(),
-        firstDate: new DateTime(1970),
+        firstDate: new DateTime(1920),
         lastDate: new DateTime.now(),
         locale: Locale('es', 'ES'));
     if (picked != null) {
@@ -241,7 +264,7 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
               if (value.isEmpty) {
                 return 'Ingrese un password válido';
               } else if (value.length < 8 || value.length > 16) {
-                return 'La contraseña debe de tener entre 8 y 16 caracteres';
+                return 'La contraseña debe poseer entre 8 y 16 caracteres, \nincluyendo por lo menos una mayúscula, \nun número y un caracter especial.';
               } else if (utils.isSpecialCaracter(value) == false) {
                 return 'Falta una mayúscula, un caracter especial y o numero';
               } else {
@@ -279,32 +302,57 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
       children: [
         StreamBuilder(
             stream: bloc.formValidStream,
-            builder: (BuildContext ctx, AsyncSnapshot snapshot) {
-              return RaisedButton(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 95.0, vertical: 10.0),
-                    child: Text('Registrar', style: TextStyle(fontSize: 18.0)),
-                  ),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  elevation: 2,
-                  color: Color.fromRGBO(143, 148, 251, 1),
-                  textColor: Colors.white,
-                  onPressed: snapshot.hasData
-                      ? () {
-                          //_showMesssageDialog('Registro exitoso'); 
-                          mostrarSnackBar(Icons.thumb_up,
-                              'Cambios guardados con éxito',
-                              Color.fromRGBO(143, 148, 251, 6)); 
-                          _submit(context);                   
-                          bloc.changeName('');
-							bloc.changeLastName('');
-							bloc.changeEmail('');
-							bloc.changePassword('');
-                        }
-                      : null,
-                
-              );
+            builder: (BuildContext ctx, AsyncSnapshot<bool> snapshotform) {
+              return StreamBuilder(
+                  stream: _connectivityProvider.connectivityStream,
+                  initialData: true,
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
+                    var isConnected = snapshot.data;
+                    if (isConnected != null) {
+                      if (isConnected == true) {
+                        _connectivityProvider.setShowError(true);
+                      }
+                    }
+                    return RaisedButton(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 95.0, vertical: 10.0),
+                        child:
+                            Text('Registrar', style: TextStyle(fontSize: 18.0)),
+                      ),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      elevation: 2,
+                      color: Colors.amber,
+                      textColor: Colors.white,
+                      onPressed: snapshotform.hasData
+                          ? () {
+                              // if (isConnected != null) {
+                              //   if (isConnected == true) {
+                              //     _submit(context);
+                              //     bloc.changeName('');
+                              //     bloc.changeLastName('');
+                              //     bloc.changeEmail('');
+                              //     bloc.changePassword('');
+                              //   } else {
+                              //     _connectivityProvider.setShowError(false);
+                              //   }
+                              //   //_showMesssageDialog('Registro exitoso');
+                              // }
+                              if (_connectivityBloc.conectividad == true) {
+                                _submit(context);
+                                bloc.changeName('');
+                                bloc.changeLastName('');
+                                bloc.changeEmail('');
+                                bloc.changePassword('');
+                              } else {
+                                print('_checkStatus else');
+                                _connectivityBloc.setErrorStream(true);
+                              }
+                            }
+                          : null,
+                    );
+                  });
             }),
       ],
     );
@@ -371,8 +419,10 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
       // Map respuestaPacienteProvider = await paciente
       paciente.id = respuestaLogin['localId'];
       await pacienteBloc.crearPaciente(paciente);
-      mostrarSnackBar(Icons.thumb_up, 'Cambios guardados con éxito', Color.fromRGBO(143, 148, 251, 6));
-      Navigator.pushReplacementNamed(context, 'login');
+      mostrarSnackBar(Icons.thumb_up, 'Registro exitoso', Colors.amber);
+      Timer(Duration(seconds: 2), () {
+        Navigator.pushReplacementNamed(context, 'login');
+      });
     } else {
       // pacienteBloc.crearPaciente(paciente);
       final err = respuestaLogin['mensaje'];
@@ -387,7 +437,7 @@ class _RegistroUsuarioPageState extends State<RegistroUsuarioPage> {
   }
 
   void mostrarSnackBar(IconData icon, String mensaje, Color color) {
-      final snackbar = mySnackBar(icon, mensaje, color);
-      scaffoldKey.currentState.showSnackBar(snackbar);
+    final snackbar = mySnackBar(icon, mensaje, color);
+    scaffoldKey.currentState.showSnackBar(snackbar);
   }
 }

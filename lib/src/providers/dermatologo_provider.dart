@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:suncare/src/models/dermatologo_model.dart';
 import 'package:suncare/src/models/mensaje_model.dart';
@@ -13,6 +14,7 @@ import 'package:suncare/src/models/solicitud_model.dart';
 import 'package:suncare/src/models/solicitud_validacion_model.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
 import 'package:suncare/src/widgets/tab_pacientes.dart';
+import 'package:suncare/src/widgets/tab_statistic.dart';
 
 class DermatologoProvider {
   final CollectionReference dermatologos =
@@ -21,38 +23,35 @@ class DermatologoProvider {
       FirebaseFirestore.instance.collection('usuarios');
   final PreferenciasUsuario _preferencia = new PreferenciasUsuario();
 
-  Future<bool> crearDermatologo(DermatologoModel dermatologo, SolicitudValidacionModel solicitudvalidacion) async {
+  Future<bool> crearDermatologo(DermatologoModel dermatologo,
+      SolicitudValidacionModel solicitudvalidacion) async {
     print('crearDermatologo from PROVIDER');
+    var now = DateTime.now();
+    dermatologo.order = now.millisecondsSinceEpoch;
     bool respuesta = false;
-    
-    try{
+
+    try {
+      await dermatologos.doc(dermatologo.id).set(dermatologo.toJson());
+
       await dermatologos
-      .doc(dermatologo.id)
-      .set(dermatologo.toJson());
-    
-      await dermatologos
-            .doc(dermatologo.id)
-            .update({
-              'solicitudes':solicitudvalidacion.toJson()
-            });
+          .doc(dermatologo.id)
+          .update({'solicitudes': solicitudvalidacion.toJson()});
 
       var datavalidada = await validarDatosDermatologo(dermatologo);
 
-      await dermatologos
-            .doc(dermatologo.id)
-            .update(datavalidada)
-            .then((value) {
-          respuesta = true;
-        });
-        
+      await dermatologos.doc(dermatologo.id).update(datavalidada).then((value) {
+        respuesta = true;
+      });
+
       print('datavalidada-> $datavalidada');
-    }catch(e) {
+    } catch (e) {
       print('error al crear al dermatologo $e');
     }
     return respuesta;
   }
 
-  Future<Map<String, dynamic>> validarDatosDermatologo(DermatologoModel dermatologo) async {
+  Future<Map<String, dynamic>> validarDatosDermatologo(
+      DermatologoModel dermatologo) async {
     var body = {
       "nombres": dermatologo.nombre.toUpperCase(),
       "apellidos": dermatologo.apellido.toUpperCase(),
@@ -64,16 +63,15 @@ class DermatologoProvider {
     var bodyString = json.encode(body);
     print('bodystring enviado->>> $bodyString');
     final respuesta = await http.post(
-        'https://weuvapp.herokuapp.com/api/validar',
+        'https://suncare-api.herokuapp.com/api/validar',
         body: bodyString,
         headers: {
-        'Content-type' : 'application/json', 
-        'Accept': 'application/json',
-        }
-    );
+          'Content-type': 'application/json',
+          'Accept': 'application/json',
+        });
 
     final Map<String, dynamic> decodeData = json.decode(respuesta.body);
-    print('datavalidada del api-> $decodeData'); 
+    print('datavalidada del api-> $decodeData');
     return decodeData;
   }
 
@@ -84,19 +82,57 @@ class DermatologoProvider {
     var respuestaFirebase = await usuarios
         .doc(idUsuario)
         .collection('mensaje')
-        .where("idMedico", isEqualTo: idDermatologo);
+        .where("idMedico", isEqualTo: idDermatologo)
+        .orderBy('fecha', descending: true);
 
     await respuestaFirebase.get().then((listaFB) {
       listaFB.docs.forEach((element) {
         print(element["mensaje"]);
+        var date = DateTime.fromMillisecondsSinceEpoch(element["fecha"]); //!
+        print("fecha string ${date.toString()}");
         listaMensajes.add(MensajeModel(
           idMedico: element["idMedico"],
-          fecha: element["fecha"],
+          fecha: date.toString(), //!
           mensaje: element["mensaje"],
         ));
       });
     });
     return listaMensajes;
+  }
+
+  Future<String> dataTipoPielFuture(String id) async {
+    // var idUser = _preferencia.userIdDB;
+    final collection_data_fecha = usuarios.doc(id);
+    var strinTipoPiel = "";
+    var x = await collection_data_fecha.get();
+    if (x.data() == null) {
+      strinTipoPiel = "";
+    } else {
+      strinTipoPiel = x.data()["tipoPiel"];
+    }
+
+    switch (x.data()["tipoPiel"]) {
+      case "Tipo I":
+        strinTipoPiel = "2";
+        break;
+      case "Tipo II":
+        strinTipoPiel = "2.5";
+        break;
+      case "Tipo III":
+        strinTipoPiel = "3.5";
+        break;
+      case "Tipo IV":
+        strinTipoPiel = "4.5";
+        break;
+      case "Tipo V":
+        strinTipoPiel = "6";
+        break;
+      case "Tipo VI":
+        strinTipoPiel = "10";
+        break;
+      default:
+    }
+    return strinTipoPiel;
   }
 
   Future<List<SolicitudModel>> listarSolicitudes() async {
@@ -117,7 +153,7 @@ class DermatologoProvider {
           vinculacion: element["vinculacion"],
           vinculacionIdMedico: element["vinculacionIdMedico"],
           vinculacionFecha: element["vinculacionFecha"],
-          nombre: element["nombre"],
+          nombre: element["nombre"] + " " + element["apellido"],
           imagenProfile: element["imagenProfile"],
         ));
       });
@@ -207,7 +243,8 @@ class DermatologoProvider {
 
     var respuestaFirebase = await usuarios
         .where("vinculacionIdMedico", isEqualTo: idDermatologo)
-        .where("vinculacion", isEqualTo: true);
+        .where("vinculacion", isEqualTo: true)
+        .orderBy("nombre");
 
     // var s = respuestaFirebase.snapshots();
     // print(s);
@@ -236,19 +273,19 @@ class DermatologoProvider {
 
     String a = "", b = "";
     if (nombre != "") {
-     a = nombre.substring(0,1).toUpperCase();
-     b = nombre.substring(1).toLowerCase(); 
+      a = nombre.substring(0, 1).toUpperCase();
+      b = nombre.substring(1).toLowerCase();
     }
 
     var respuestaFirebase = await usuarios
         .where("vinculacionIdMedico", isEqualTo: idDermatologo)
         .where("vinculacion", isEqualTo: true)
-        .where("nombre", isGreaterThanOrEqualTo: a+b)
-        .where("nombre", isLessThanOrEqualTo: a+b + '\uf8ff')        
+        .where("nombre", isGreaterThanOrEqualTo: a + b)
+        .where("nombre", isLessThanOrEqualTo: a + b + '\uf8ff')
         .get();
-    
+
     var docs = await respuestaFirebase.docs;
-    
+
     docs.forEach((element) {
       print('-----> ${element["nombre"]}');
       listaPaciente.add(PacienteModel(
@@ -308,7 +345,7 @@ class DermatologoProvider {
     await ruta.add({
       'idMedico': idMedico,
       'mensaje': mensaje,
-      'fecha': DateTime.now().toString(),
+      'fecha': DateTime.now().toUtc().millisecondsSinceEpoch,
     }).then((value) => respuesta = true);
 
     return respuesta;
@@ -320,23 +357,23 @@ class DermatologoProvider {
     final paciente = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(idPaciente)
-        .get().then((value) => {
-          
-          print(value),
-          tokenPaciente = value['tokens']['tokenDevice'],
-
-          });
+        .get()
+        .then((value) => {
+              print(value),
+              tokenPaciente = value['tokens']['tokenDevice'],
+            });
     print('token obtenido-> $tokenPaciente');
 
-    String key = 'AAAAFwdIfrY:APA91bHUIK4xyY51cPDU-EiIfgl-up4swBso9FC2hb803tGvDAjNtnA97Uks4VZm11yPfMUrHcKBNwT7CG2ulzPvSqJT6Gz4FrLKlE1YnkmyCFuUZ8-i7pMb8Q4BRqyDOW5weOdffqYs';
+    String key =
+        'AAAAFwdIfrY:APA91bHUIK4xyY51cPDU-EiIfgl-up4swBso9FC2hb803tGvDAjNtnA97Uks4VZm11yPfMUrHcKBNwT7CG2ulzPvSqJT6Gz4FrLKlE1YnkmyCFuUZ8-i7pMb8Q4BRqyDOW5weOdffqYs';
     var body = {
       "to": tokenPaciente,
       "notification": {
-        "title":"Nuevas recomendaciones",
+        "title": "Nuevas recomendaciones",
         "body": "Tu dermatologo te ha enviado nuevas recomendaciones"
       },
       "data": {
-        "irA": "mensaje",
+        "alerta": "mensaje",
         "click_action": "FLUTTER_NOTIFICATION_CLICK"
       }
     };
@@ -345,17 +382,77 @@ class DermatologoProvider {
 
     var bodyString = json.encode(body);
     print('bodystring enviado->>> $bodyString');
-    final respuesta = await http.post(
-        'https://fcm.googleapis.com/fcm/send',
+    final respuesta = await http.post('https://fcm.googleapis.com/fcm/send',
         body: bodyString,
         headers: {
-        'Content-type' : 'application/json',
-        "Authorization":"key=$key"
-        }
-    );
+          'Content-type': 'application/json',
+          "Authorization": "key=$key"
+        });
 
     final Map<String, dynamic> decodeData = json.decode(respuesta.body);
-    print('respuesta del fcm-> $decodeData'); 
+    print('respuesta del fcm-> $decodeData');
     return decodeData;
+  }
+
+  Future<OrdinalSales> dataEstadisticaFecha2(
+      DateTime fecha, String idUser) async {
+    print('dashhhhhh fecha $fecha');
+    int dia = fecha.day;
+    int mes = fecha.month;
+    int anio = fecha.year;
+    OrdinalSales dataFecha = new OrdinalSales('', 0, label: "");
+
+    final collection_data_fecha = usuarios
+        .doc(idUser)
+        .collection('dosisDiaria')
+        .doc(fecha.toString().substring(0, 10));
+    // .where("dia", isEqualTo: dia)
+    // .where("mes", isEqualTo: mes)
+    // .where("anio", isEqualTo: anio);
+
+    var dataFB = await collection_data_fecha.get();
+
+    if (dataFB.data() == null) {
+      int td = fecha.weekday;
+      dataFecha.texto = textoDia(td);
+      dataFecha.valor = 0;
+    } else {
+      int td = fecha.weekday;
+      dataFecha.texto = textoDia(td);
+      dataFecha.valor = dataFB.data()["acumulado"];
+      dataFecha.label =
+          dataFB.data()["acumulado"].toStringAsFixed(1).toString();
+    }
+    return dataFecha;
+  }
+
+  String textoDia(int td) {
+    String texto = "";
+    switch (td) {
+      case 1:
+        texto = "L";
+        break;
+      case 2:
+        texto = "Ma";
+        break;
+      case 3:
+        texto = "Mi";
+        break;
+      case 4:
+        texto = "J";
+        break;
+      case 5:
+        texto = "V";
+        break;
+      case 6:
+        texto = "S";
+        break;
+      case 7:
+        texto = "D";
+        break;
+      default:
+        texto = "";
+    }
+    return texto;
   }
 }
