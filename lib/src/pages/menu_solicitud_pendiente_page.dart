@@ -120,18 +120,16 @@ class SolicitudPendientePage extends StatelessWidget {
                     icon: Icon(Icons.check),
                     color: Colors.blue,
                     onPressed: () async {
-                      // _cancelarSolicitud(context, solictud);
                       bool respuesta =
                           await dermatologoBloc.aceptarSolicitud(solictud);
                       if (respuesta == true) {
-                        mostrarSnackBar(Icons.thumb_up,
-                            'Paciente vinculado con éxito', Colors.amber);
                         dermatologoBloc.listarSolicitudes();
-                        Navigator.popAndPushNamed(context, 'home_dermatologo');
-                      } else {
-                        mostrarSnackBar(
-                            Icons.error, 'Ocurrio un error', Colors.red);
                         Navigator.of(context).pop();
+                        mostrarSnackBar(Icons.thumb_up,"Paciente vinculado con éxito", Colors.amber);
+                        print("Entro a check");
+                      } else {
+                        Navigator.of(context).pop();
+                        mostrarSnackBar(Icons.error, "Ocurrió un error", Colors.red);
                       }
                     },
                   ),
@@ -139,19 +137,17 @@ class SolicitudPendientePage extends StatelessWidget {
                     icon: Icon(Icons.delete),
                     color: Colors.red,
                     onPressed: () async {
-                      // _cancelarSolicitud(context, solictud);
                       bool respuesta =
                           await dermatologoBloc.cancelarSolicitud(solictud);
-
                       if (respuesta == true) {
                         Navigator.of(context).pop();
-                        mostrarSnackBar(Icons.thumb_up,
-                            'Paciente vinculado con éxito', Colors.amber);
+                        mostrarSnackBar(Icons.thumb_up,"Solicitud eliminada con éxito", Colors.amber);
                         dermatologoBloc.listarSolicitudes();
+                        print("Entro al delete");
                       } else {
                         Navigator.of(context).pop();
                         mostrarSnackBar(
-                            Icons.error, 'Ocurrio un error', Colors.red);
+                            Icons.error, "Ocurrió un error", Colors.red);
                       }
                     },
                   ),
@@ -190,12 +186,13 @@ class SolicitudPendientePage extends StatelessWidget {
                       if (respuesta == true) {
                         Navigator.of(context).pop();
                         mostrarSnackBar(Icons.thumb_up,
-                            'Paciente vinculado con éxito', Colors.amber);
+                            "Paciente vinculado con éxito", Colors.amber);
                         dermatologoBloc.listarSolicitudes();
+                        print("Selecciónm");
                       } else {
                         Navigator.of(context).pop();
                         mostrarSnackBar(
-                            Icons.error, 'Ocurrio un error', Colors.red);
+                            Icons.error, "Ocurrió un error", Colors.red);
                       }
                     }),
               ])
@@ -229,12 +226,12 @@ class SolicitudPendientePage extends StatelessWidget {
                     if (respuesta == true) {
                       Navigator.of(context).pop();
                       mostrarSnackBar(Icons.thumb_up,
-                          'Solicitud cancelada correctamente', Colors.amber);
+                          "Solicitud cancelada correctamente", Colors.amber);
                       dermatologoBloc.listarSolicitudes();
                     } else {
                       Navigator.of(context).pop();
                       mostrarSnackBar(
-                          Icons.error, 'Ocurrio un error', Colors.red);
+                          Icons.error, "Ocurrió un error", Colors.red);
                     }
                   }),
             ],
@@ -244,7 +241,7 @@ class SolicitudPendientePage extends StatelessWidget {
 
   void mostrarSnackBar(IconData icon, String mensaje, Color color) {
     final snackbar = mySnackBar(icon, mensaje, color);
-    // ignore: deprecated_member_use
     scaffoldKey.currentState.showSnackBar(snackbar);
   }
 }
+

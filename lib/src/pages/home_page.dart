@@ -502,7 +502,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       if (res == true) {
                         Navigator.of(context).pop();
                       } else {
-                        mostrarSnackBar('Ocurrio un error');
+                        mostrarSnackBar('Ocurrió un error');
                       }
                     }),
               ],
@@ -622,7 +622,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                                     if (_connectivityBloc.conectividad ==
                                         false) {
-                                      // NO hay internet
+                                      _connectivityProvider.setShowError(false);
                                       return;
                                     } else {
                                       if (isValid) {
@@ -711,32 +711,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void validarPermisosGPS() async {
     var perFPS = await Geolocator.isLocationServiceEnabled();
-
     print('gps esta $perFPS');
-
-    // return true;
   }
-
-  // void _showMesssageDialog(BuildContext context, String message) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (ctx) => AlertDialog(
-  //       title: SizedBox(height: 3),
-  //       content: Text(message),
-  //       actions: <Widget>[
-  //         FlatButton(
-  //           child: Text('Cancelar'),
-  //           onPressed: () => Navigator.of(context).pop()),
-  //         FlatButton(
-  //           child: Text('Aceptar'),
-  //           onPressed: () {
-  //             Navigator.of(ctx).pop();
-  //             _preferencia.cerrarSesion();
-  //             Navigator.pushReplacementNamed(context, 'login');
-  //           },
-  //         )
-  //       ],
-  //     ),
-  //   );
-  // }
 }
