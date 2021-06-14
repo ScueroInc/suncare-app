@@ -28,8 +28,6 @@ class DermatologoBloc with Validators {
   final _emailController = BehaviorSubject<String>();
   final _nameController = BehaviorSubject<String>();
   final _lastNameController = BehaviorSubject<String>();
-
-  // final _idMedicoVincularController
   //Escuchar los datos del Stream
   Stream<String> get emailStream => _emailController.transform(validarEmail);
   Stream<String> get nameStream => _nameController.transform(validarName);
@@ -70,9 +68,6 @@ class DermatologoBloc with Validators {
   }
 
   Future<String> dataTipoPielFuture(String id) async {
-    // var f =_bluetoothProvider.dataEstadisticaFecha();
-    // OrdinalSales data = await _bluetoothProvider.dataEstadisticaFecha2(fecha);
-    // print('kinkin 1 $fecha ${data.valor}');
     var xtipoPiel = await _dermatologoProvider.dataTipoPielFuture(id);
     print('datata 0 ${xtipoPiel}');
     return xtipoPiel;
@@ -146,7 +141,6 @@ class DermatologoBloc with Validators {
 
   Future<OrdinalSales> dataEstadisticaFecha(
       DateTime fecha, String idUser) async {
-    // var f =_bluetoothProvider.dataEstadisticaFecha();
     OrdinalSales data =
         await _dermatologoProvider.dataEstadisticaFecha2(fecha, idUser);
     print('kinkin 1 $fecha ${data.valor}');
@@ -155,11 +149,7 @@ class DermatologoBloc with Validators {
 
   void insertarDataInitSemanal(DateTime fecha, String idUser) async {
     List<charts.Series<OrdinalSales, String>> listDataSemanal = [];
-    // bool val = false;
-    // var d1 = await dataEstadisticaFecha(dia, mes, anio);
-    // for (var i = 1; i <= 7; i++) {
     print("kinkin $fecha");
-    // }
     var d6 = await dataEstadisticaFecha(
         new DateTime(fecha.year, fecha.month, fecha.day - 6), idUser);
     var d5 = await dataEstadisticaFecha(

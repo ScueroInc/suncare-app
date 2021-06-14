@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/gen/flutterblue.pb.dart';
 import 'package:flutter_offline/flutter_offline.dart';
+import 'package:suncare/src/bloc/connectivity_bloc.dart';
+import 'package:suncare/src/bloc/provider.dart';
 import 'package:suncare/src/preferencias/preferencias_usuario.dart';
 import 'package:suncare/src/widgets/my_snack_bar.dart';
 import 'package:suncare/src/widgets/tab_home.dart';
@@ -25,24 +28,24 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
   ConnectivityProvider _connectivityProvider = ConnectivityProvider.instance;
   bool _source = true;
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   @override
-  void initState() { 
+  void initState() {
     super.initState();
     _connectivityProvider.initialize();
-    _connectivityProvider.connectivityStream.listen((source) { 
-      if(mounted){
+    _connectivityProvider.connectivityStream.listen((source) {
+      if (mounted) {
         setState(() {
-        _source = source;
+          _source = source;
         });
       }
     });
   }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      key:scaffoldKey,
+      key: scaffoldKey,
       appBar: AppBar(
         backgroundColor: Colors.amber,
         title: Text('Pacientes'),
@@ -63,14 +66,12 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
           onTap: _onItemTapped,
         ),
       ),
-      body: Stack(
-        children:[ 
-          Container(
-            child: tabs[_currentIndex],
-          ),
-          utils.nostrarInternetAnimated(_source),
-        ]  
-      ),
+      body: Stack(children: [
+        Container(
+          child: tabs[_currentIndex],
+        ),
+        utils.nostrarInternetAnimated(_source),
+      ]),
     );
   }
 
@@ -101,8 +102,7 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
             decoration: BoxDecoration(color: Colors.amber),
           ),
           ListTile(
-            leading: Icon(Icons.perm_identity,
-                color: Colors.amber[800]),
+            leading: Icon(Icons.perm_identity, color: Colors.amber[800]),
             title: Text('Perfil'),
             onTap: () {
               Navigator.pop(context);
@@ -110,8 +110,7 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
             },
           ),
           ListTile(
-            leading: Icon(Icons.perm_identity,
-                color: Colors.amber[800]),
+            leading: Icon(Icons.perm_identity, color: Colors.amber[800]),
             title: Text('Solicitudes'),
             onTap: () {
               Navigator.pop(context);
@@ -120,8 +119,7 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
           ),
           Divider(),
           ListTile(
-            leading:
-                Icon(Icons.logout, color: Colors.amber[800]),
+            leading: Icon(Icons.logout, color: Colors.amber[800]),
             title: Text('Cerrar sesión'),
             onTap: () {
               _showMesssageDialog(context, '¿Desea cerrar sesión?');
@@ -196,45 +194,51 @@ class _HomeDermatologoPageState extends State<HomeDermatologoPage> {
           children: <Widget>[
             SizedBox(height: 20),
             Container(
-              child: Text(
-                message,
-                textAlign: TextAlign.center
-              ),
+              child: Text(message, textAlign: TextAlign.center),
             ),
             SizedBox(height: 20),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                FlatButton(
-                child: Text('Cancelar', style: TextStyle(color: Colors.amber[800])),
-                onPressed: () => {
-                  Navigator.of(context).pop(),
-                  Navigator.pushReplacementNamed(context, 'home_dermatologo')
-                  }),
-                FlatButton(
-                child: Text('Aceptar', style: TextStyle(color: Colors.amber[800])),
-                onPressed: () {
-                  if(_source == true){
-                  Navigator.of(ctx)..pop()..pop(); 
-                  _preferencia.cerrarSesion();
-                  mostrarSnackBar(Icons.thumb_up, "Sesión finalizada", Colors.amber);                
-                  Timer(Duration(seconds: 2), () {
-                  Navigator.pushNamedAndRemoveUntil(context, 'login', (route) => false);
-                  });
-                  } else {
-                    Navigator.of(ctx)..pop()..pop(); 
-                  }
-                },
-              ),
-              ])
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  FlatButton(
+                      child: Text('Cancelar',
+                          style: TextStyle(color: Colors.amber[800])),
+                      onPressed: () => {
+                            Navigator.of(context).pop(),
+                            Navigator.pushReplacementNamed(
+                                context, 'home_dermatologo')
+                          }),
+                  FlatButton(
+                    child: Text('Aceptar',
+                        style: TextStyle(color: Colors.amber[800])),
+                    onPressed: () async {
+                      final connectivity =
+                          await Connectivity().checkConnectivity();
+                      final hasInternet =
+                          connectivity != ConnectivityResult.none;
+                      if (_source == true && hasInternet) {
+                        Navigator.of(ctx)..pop()..pop();
+                        _preferencia.cerrarSesion();
+                        mostrarSnackBar(
+                            Icons.thumb_up, "Sesión finalizada", Colors.amber);
+                        Timer(Duration(seconds: 2), () {
+                          Navigator.pushNamedAndRemoveUntil(
+                              context, 'login', (route) => false);
+                        });
+                      } else {
+                        Navigator.of(ctx)..pop()..pop();
+                      }
+                    },
+                  ),
+                ])
           ],
         ),
       ),
     );
   }
+
   void mostrarSnackBar(IconData icon, String mensaje, Color color) {
     final snackbar = mySnackBar(icon, mensaje, color);
     scaffoldKey.currentState.showSnackBar(snackbar);
   }
-
 }

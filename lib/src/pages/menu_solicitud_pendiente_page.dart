@@ -84,11 +84,7 @@ class SolicitudPendientePage extends StatelessWidget {
       key: UniqueKey(),
       background: Container(color: Colors.red),
       onDismissed: (direccion) async {
-        // productoProvider.eliminarProducto(producto.id);
-        // productoBloc.borrarProducto(producto.id);
-
         print('eliminar ${solictud.idUser}');
-        // await dermatologoBloc.cancelarSolicitud(solictud);
       },
       child: Card(
         child: Column(
@@ -99,9 +95,7 @@ class SolicitudPendientePage extends StatelessWidget {
                 child: ClipOval(
                   child: FadeInImage(
                     placeholder: AssetImage('assets/img/no-image.png'),
-                    image: solictud.imagenProfile == null
-                        ? NetworkImage('assets/img/no-image.png')
-                        : NetworkImage(solictud.imagenProfile),
+                    image: solictud.imagenProfile == null ? NetworkImage('assets/img/no-image.png'): NetworkImage(solictud.imagenProfile),
                     fit: BoxFit.contain,
                     height: 200.0,
                   ),
@@ -110,7 +104,6 @@ class SolicitudPendientePage extends StatelessWidget {
               title: Text(solictud.nombre),
               subtitle: Text(solictud.vinculacionFecha.substring(0, 10)),
               onTap: () async {
-                // await dermatologoBloc.cancelarSolicitud(solictud);
                 print('click en el item');
                 _aceptarSolicitud(context, solictud);
               },
@@ -120,35 +113,15 @@ class SolicitudPendientePage extends StatelessWidget {
                     icon: Icon(Icons.check),
                     color: Colors.blue,
                     onPressed: () async {
-                      bool respuesta =
-                          await dermatologoBloc.aceptarSolicitud(solictud);
-                      if (respuesta == true) {
-                        dermatologoBloc.listarSolicitudes();
-                        Navigator.of(context).pop();
-                        mostrarSnackBar(Icons.thumb_up,"Paciente vinculado con éxito", Colors.amber);
-                        print("Entro a check");
-                      } else {
-                        Navigator.of(context).pop();
-                        mostrarSnackBar(Icons.error, "Ocurrió un error", Colors.red);
-                      }
+                      _aceptarSolicitud(context, solictud);
                     },
                   ),
                   IconButton(
                     icon: Icon(Icons.delete),
                     color: Colors.red,
                     onPressed: () async {
-                      bool respuesta =
-                          await dermatologoBloc.cancelarSolicitud(solictud);
-                      if (respuesta == true) {
-                        Navigator.of(context).pop();
-                        mostrarSnackBar(Icons.thumb_up,"Solicitud eliminada con éxito", Colors.amber);
-                        dermatologoBloc.listarSolicitudes();
-                        print("Entro al delete");
-                      } else {
-                        Navigator.of(context).pop();
-                        mostrarSnackBar(
-                            Icons.error, "Ocurrió un error", Colors.red);
-                      }
+
+                      _cancelarSolicitud(context, solictud);
                     },
                   ),
                 ],
@@ -181,6 +154,12 @@ class SolicitudPendientePage extends StatelessWidget {
                     child:
                         Text('Sí', style: TextStyle(color: Colors.amber[800])),
                     onPressed: () async {
+                      if(_connectivityBloc.conectividad==false){
+                        _connectivityProvider.setShowError(false);
+                        Navigator.of(context).pop();
+                        mostrarSnackBar(Icons.signal_wifi_off,
+                            "Error de conexión a Internet", Colors.red);
+                      } else {
                       bool respuesta =
                           await dermatologoBloc.aceptarSolicitud(solicitud);
                       if (respuesta == true) {
@@ -193,7 +172,7 @@ class SolicitudPendientePage extends StatelessWidget {
                         Navigator.of(context).pop();
                         mostrarSnackBar(
                             Icons.error, "Ocurrió un error", Colors.red);
-                      }
+                      }}
                     }),
               ])
             ]),
@@ -220,6 +199,12 @@ class SolicitudPendientePage extends StatelessWidget {
               TextButton(
                   child: Text('Sí'),
                   onPressed: () async {
+                    if(_connectivityBloc.conectividad==false){
+                    _connectivityProvider.setShowError(true);
+                    Navigator.of(context).pop();
+                    mostrarSnackBar(Icons.signal_wifi_off,
+                        "Error de conexión a Internet", Colors.red);
+                    } else {
                     bool respuesta =
                         await dermatologoBloc.cancelarSolicitud(solicitud);
 
@@ -232,7 +217,7 @@ class SolicitudPendientePage extends StatelessWidget {
                       Navigator.of(context).pop();
                       mostrarSnackBar(
                           Icons.error, "Ocurrió un error", Colors.red);
-                    }
+                    }}
                   }),
             ],
           );

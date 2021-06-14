@@ -36,7 +36,6 @@ class MenuVinculacion extends StatelessWidget {
           title: Text('Estado de vinculación'),
           backgroundColor: Colors.amber,
         ),
-        //body: contenido(),
         body: StreamBuilder(
           stream: _connectivityBloc.connectivityStream,
           builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
@@ -47,15 +46,12 @@ class MenuVinculacion extends StatelessWidget {
               return Stack(
                 children: [
                   contenido(),
-                  // utils.mostrarInternetConexionWithStream(_connectivityProvider)
                   utils.nostrarInternetErrorStream(_connectivityBloc)
                 ],
               );
             }
           },
         )
-
-        // floatingActionButton: botonFlotante(context),
         );
   }
 
@@ -67,7 +63,6 @@ class MenuVinculacion extends StatelessWidget {
 
         if (snapshot.hasData) {
           if (snapshot.data == "NULA") {
-            // return vinculacionDesactivada();
             return AlertDialog(
               title: Text('Vincular doctor'),
               content: Column(
@@ -110,8 +105,6 @@ class MenuVinculacion extends StatelessWidget {
                                 Navigator.pushNamed(context, 'home')
                               }),
                       StreamBuilder(
-                        //dashhhhhhh
-                        // stream: _connectivityProvider.connectivityStream ,
                         stream: _connectivityBloc.connectivityStream,
                         initialData: true,
                         builder:
@@ -158,36 +151,6 @@ class MenuVinculacion extends StatelessWidget {
                                   }));
                         },
                       ),
-                      /* TextButton(
-                      child: Text('Cancelar',
-                              style: TextStyle(
-                                  color: Color.fromRGBO(143, 148, 251, 6))
-                                  ),
-                      onPressed: () => {
-                        bloc.changeCmp(''),
-                        Navigator.pushNamed(context, 'home')                        
-                        }
-                        ), */
-                      /* TextButton(
-                          child: Text('Aceptar',
-                              style: TextStyle(
-                                  color: Color.fromRGBO(143, 148, 251, 6))),
-                          onPressed: () async {
-                            bool res = await _vinculacionBloc
-                                .crearVinculacion(idMedicoVincular);
-
-                            if (res == true) {
-                              // Navigator.of(context).pop();
-                              Navigator.pushReplacementNamed(context, 'vinculacion');
-                              mostrarSnackBar(Icons.thumb_up,
-                                  'Paciente vinculado con éxito', Colors.blue);
-                              await _vinculacionBloc.estadoActual();
-                            } else {
-                              // Navigator.of(context).pop();
-                              mostrarSnackBar(
-                                  Icons.error, 'Ocurrio un error', Colors.red);
-                            }
-                          }), */
                     ],
                   ),
                 ],
@@ -382,21 +345,14 @@ class MenuVinculacion extends StatelessWidget {
               onPressed: () async {
                 if (isConnected != null) {
                   if (isConnected == true) {
-                    // Navigator.pushReplacementNamed(context, 'perfil_dermatologo');
-                    bool respuesta =
-                        await _vinculacionBloc.cancelarVinculacion();
+                    bool respuesta = await _vinculacionBloc.cancelarVinculacion();
                     if (respuesta) {
-                      //se cancelo correctamente
-                      print('Dermatólogo desvincunlado con éxito');
-                      // Navigator.of(context).pop();
-                      mostrarSnackBar(Icons.thumb_up,
-                          'Dermatólogo desvincunlado con éxito', Colors.amber);
+                      mostrarSnackBar(Icons.thumb_up, 'Dermatólogo desvincunlado con éxito', Colors.amber);
                       _vinculacionBloc.estadoActual();
                       Timer(Duration(seconds: 2), () {
                         Navigator.pushNamed(context, 'home');
                       });
                     } else {
-                      //hubo un error
                       print('hubo un error');
                       Navigator.of(context).pop();
                       mostrarSnackBar(

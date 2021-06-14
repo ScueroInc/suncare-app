@@ -7,7 +7,7 @@ import 'package:suncare/src/utils/utils.dart' as utils;
 
 class MenuMensajeUsuario extends StatelessWidget {
   PacienteBloc _pacienteBloc;
-  ConnectivityProvider _connectivityProvider;  
+  ConnectivityProvider _connectivityProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -15,27 +15,25 @@ class MenuMensajeUsuario extends StatelessWidget {
     _connectivityProvider = ConnectivityProvider.instance;
     _pacienteBloc.buscarMensajes();
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.amber,
-        title: Text('Recomendaciones'),
-      ),
-      body: Stack(
-        children:[
+        appBar: AppBar(
+          backgroundColor: Colors.amber,
+          title: Text('Recomendaciones'),
+        ),
+        body: Stack(children: [
           _listaMensaje(context),
           StreamBuilder(
-            stream: _connectivityProvider.connectivityStream ,
+            stream: _connectivityProvider.connectivityStream,
             initialData: true,
-            builder: (BuildContext context, AsyncSnapshot snapshot){
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
               var isConnected = snapshot.data;
-              if(isConnected != null){
+              if (isConnected != null) {
                 _connectivityProvider.setShowError(isConnected);
               }
-              return utils.mostrarInternetConexionWithStream(_connectivityProvider);
+              return utils
+                  .mostrarInternetConexionWithStream(_connectivityProvider);
             },
-          ), 
-        ]
-      )
-    );
+          ),
+        ]));
   }
 
   _listaMensaje(BuildContext context) {

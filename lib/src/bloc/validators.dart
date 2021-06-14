@@ -18,7 +18,7 @@ class Validators {
       }
     } else {
       if (email == '') {
-        } else {
+      } else {
         sink.addError('Correo no válido');
       }
     }
@@ -56,14 +56,14 @@ class Validators {
       if (password == '') {
       } else {
         sink.addError(
-            'La contraseña debe poseer entre  8 y 16\ncaracteres, incluyendo por lo menos\nuna mayúscula y un carácter especial.');
+            'La contraseña debe poseer entre\n8 y 16 caracteres, incluyendo\npor lo menos una mayúscula\ny un caracter especial.');
       }
     }
   });
 
   final validarPasswordLogin = StreamTransformer<String, String>.fromHandlers(
       handleData: (password, sink) {
-    if (password.length >= 6) {
+    if (password.length >= 8) {
       sink.add(password);
     } else {
       if (password == '') {
@@ -81,7 +81,7 @@ class Validators {
     } else {
       if (cmp == '') {
       } else {
-      sink.addError('CMP incorrecto');
+        sink.addError('CMP incorrecto');
       }
     }
   });
@@ -94,17 +94,16 @@ class Validators {
       verificarCmp(cmp, derma, sink);
     } else {
       if (cmp == '') {
-      } else{
-      sink.addError('CMP no válido');
+      } else {
+        sink.addError('CMP no válido');
       }
     }
   });
 
   final validarName =
       StreamTransformer<String, String>.fromHandlers(handleData: (name, sink) {
-    final validCharacters = RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1]+\s?[a-zA-zÀ-ÿ-z&%=\u00f1\u00d1]+$');
-    //final validCharacters = RegExp(r'^[a-zA-Z&%=]+$');
-
+    final validCharacters =
+        RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1]+\s?[a-zA-zÀ-ÿ-z&%=\u00f1\u00d1]+$');
     if (name.length >= 3 && name.length <= 30) {
       if (validCharacters.hasMatch(name)) {
         sink.add(name);
@@ -137,7 +136,8 @@ class Validators {
 
   final validarLastname = StreamTransformer<String, String>.fromHandlers(
       handleData: (lastName, sink) {
-    final validCharacters = RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1&%=]+\s[a-zA-ZÀ-ÿ-z&%=\u00f1\u00d1]+$');
+    final validCharacters =
+        RegExp(r'^[a-zA-ZÀ-ÿ\u00f1\u00d1&%=]+\s[a-zA-ZÀ-ÿ-z&%=\u00f1\u00d1]+$');
     if (lastName.length >= 4 && lastName.length <= 30) {
       if (validCharacters.hasMatch(lastName)) {
         sink.add(lastName);
@@ -146,9 +146,7 @@ class Validators {
       }
     } else {
       if (lastName == '') {
-        //sink.addError('');
       } else {
-        // sink.addError('Más de 3 caracteres por favor');
         sink.addError('Ingresar más de 3 caracteres por favor');
       }
     }

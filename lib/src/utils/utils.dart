@@ -187,29 +187,6 @@ Widget nostrarInternetError() {
 }
 
 Widget nostrarInternetErrorStream(ConnectivityBloc _connectivityBloc) {
-  // return StreamBuilder(
-  //   stream: _connectivityBloc.connectivityStream,
-  //   builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-  //     print("_checkStatus * ${snapshot.data}");
-  //     if (snapshot.data == true) {
-  //       _connectivityBloc.setErrorRegistrarUsuario(false);
-  //       return Container();
-  //     } else {
-  // if (_connectivityBloc.showError == true) {
-  //   return AnimatedContainer(
-  //       curve: Curves.easeInBack,
-  //       duration: Duration(milliseconds: 1000),
-  //       color: Colors.grey,
-  //       child: Row(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [Text("Error de conexión a Internet")],
-  //       ));
-  // } else {
-  //         return Container();
-  //       }
-  //     }
-  //   },
-  // );
   return StreamBuilder(
     stream: _connectivityBloc.showErrorStream,
     // initialData: initialData ,

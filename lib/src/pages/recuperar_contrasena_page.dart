@@ -29,13 +29,11 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
 
   @override
   Widget build(BuildContext context) {
-    
     return SafeArea(
         child: Scaffold(
             resizeToAvoidBottomInset: false,
             body: Stack(
               children: [
-                
                 Container(
                   padding: EdgeInsets.all(15.0),
                   child: _formularioRecuperarContrasena(context),
@@ -67,9 +65,8 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
 
   Widget _titlePage() {
     return Text('Recuperar contraseña',
-    textAlign: TextAlign.center,
-        style:
-            TextStyle(fontSize: 28.0, color: Colors.amber[800]));
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 28.0, color: Colors.amber[800]));
   }
 
   Widget _crearCorreo(RecuperarContrasenaBloc bloc) {
@@ -108,40 +105,41 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
             width: 300,
             height: 40,
             child: StreamBuilder(
-              stream: _connectivityProvider.connectivityStream ,
-              initialData: true,
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                var isConnected = snapshot.data;
-                if(isConnected != null){                           
-                  if(isConnected == true){
-                    _connectivityProvider.setShowError(true);
+                stream: _connectivityProvider.connectivityStream,
+                initialData: true,
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  var isConnected = snapshot.data;
+                  if (isConnected != null) {
+                    if (isConnected == true) {
+                      _connectivityProvider.setShowError(true);
+                    }
                   }
-                }
-                return RaisedButton(
-                  child: Container(
-                    child: Text('Recuperar',
-                        style: TextStyle(fontSize: 18.0)),
-                  ),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25.0)),
-                  elevation: 0.0,
-                  color: Colors.amber,
-                  textColor: Colors.white,
-                  onPressed: snapshotform.hasData
-                      ? () {
-                        if(isConnected != null) {
-                            if(isConnected == true) {
-                              usuarioProvider.enviarRecuperarContrasena(bloc.email);
-                              _showMesssageDialog('Por favor revise su correo');
-                            } else {
-                              _connectivityProvider.setShowError(false);
+                  return RaisedButton(
+                    child: Container(
+                      child:
+                          Text('Recuperar', style: TextStyle(fontSize: 18.0)),
+                    ),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25.0)),
+                    elevation: 0.0,
+                    color: Colors.amber,
+                    textColor: Colors.white,
+                    onPressed: snapshotform.hasData
+                        ? () {
+                            if (isConnected != null) {
+                              if (isConnected == true) {
+                                usuarioProvider
+                                    .enviarRecuperarContrasena(bloc.email);
+                                _showMesssageDialog(
+                                    'Por favor revise su correo');
+                              } else {
+                                _connectivityProvider.setShowError(false);
+                              }
                             }
-                        }
-                      }
-                      : null,
-                );
-              }
-            ),
+                          }
+                        : null,
+                  );
+                }),
           );
         });
   }
@@ -151,19 +149,18 @@ class _RecuperarContrasenaPageState extends State<RecuperarContrasenaPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Restablecer contraseña'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min, 
-          children: <Widget>[
-            Text(message),
-            SizedBox(height: 20),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-              FlatButton(
-                  child: Text('Aceptar',style: TextStyle(color: Colors.amber[800])),
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    Navigator.pushReplacementNamed(context, 'login');
-              })
-            ])
+        content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+          Text(message),
+          SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+            FlatButton(
+                child:
+                    Text('Aceptar', style: TextStyle(color: Colors.amber[800])),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.pushReplacementNamed(context, 'login');
+                })
+          ])
         ]),
       ),
     );

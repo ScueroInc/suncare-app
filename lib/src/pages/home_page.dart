@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart' as blue;
 import 'package:connectivity/connectivity.dart';
 import 'package:custom_switch/custom_switch.dart';
@@ -271,9 +272,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // navegar
         break;
       case PermissionStatus.denied:
+        SystemNavigator.pop();
+        break;
       case PermissionStatus.restricted:
       case PermissionStatus.permanentlyDenied:
         gpsPermition.openAppSettings();
+        SystemNavigator.pop();
         break;
       case PermissionStatus.undetermined:
         break;
@@ -631,8 +635,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             Icons.thumb_up,
                                             'Cambios guardados con éxito',
                                             Colors.amber);
-                                        // _showMesssageDialog('Cambios guardados con éxito');
-                                      } else {
+                                       } else {
                                         setState(() {
                                           _spf[index] = true;
                                         });
@@ -640,13 +643,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             Icons.error,
                                             'No olvides aplicarte protector solar',
                                             Colors.amber);
-                                        // _showMesssageDialog('Escóge tu nivel de SPF');
                                       }
                                     }
                                   } else {
                                     Navigator.of(context)..pop()..pop();
                                   }
-                                  // cerrar ventana
                                 })
                           ])
                     ],
@@ -681,15 +682,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   FlatButton(
                       child: Text('Cancelar',
                           style: TextStyle(color: Colors.amber[800])),
-                      onPressed: () => {
-                            Navigator.of(context).pop(),
-                            Navigator.pushReplacementNamed(context, 'home')
-                          }),
+                          onPressed: () => {
+                                Navigator.of(context).pop(),
+                                Navigator.pushReplacementNamed(context, 'home')
+                              }),
                   FlatButton(
                       child: Text('Aceptar',
                           style: TextStyle(color: Colors.amber[800])),
-                      onPressed: () {
-                        if (_source == true) {
+                      onPressed: () async {
+                        final connectivity =
+                            await Connectivity().checkConnectivity();
+                        final hasInternet =
+                            connectivity != ConnectivityResult.none;
+                        if (_source == true && hasInternet) {
                           Navigator.of(ctx)..pop()..pop();
                           _preferencia.cerrarSesion();
                           mostrarSnackBar2(Icons.thumb_up, "Sesión finalizada",
